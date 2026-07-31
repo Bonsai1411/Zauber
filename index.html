@@ -1,0 +1,159 @@
+html<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mystery</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000000; color: #000000;
+            overflow: hidden; touch-action: none; user-select: none;
+        }
+        #emergency-exit { position: fixed; top: 0; left: 0; width: 20%; height: 20%; z-index: 9999; }
+        
+        /* Der magische Enthüllungs-Bildschirm */
+        #reveal-screen {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000000; color: white; font-family: 'Georgia', serif;
+            text-align: center; justify-content: center; align-items: center; flex-direction: column;
+            z-index: 5000;
+        }
+        #prediction-text { font-size: 24px; margin-bottom: 30px; padding: 20px; transition: opacity 2s; }
+        #card-display { font-size: 40px; font-weight: bold; border: 3px solid white; padding: 40px 20px; border-radius: 10px; display: inline-block; min-width: 150px; }
+    </style>
+</head>
+<body>
+
+    <div id="emergency-exit"></div>
+
+    <div id="reveal-screen">
+        <div id="prediction-text"></div>
+        <div id="card-display"></div>
+    </div>
+
+<script>
+    let phase = 0; // 0 = Standby, 1 = Farbe, 2 = Wert, 3 = Name/Datum, 4 = Bereit für Zuschauer
+    let kartenFarbe = "";
+    let kartenWert = 0;
+    let zuschauerName = "";
+    let geburtsDatum = "";
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'de-DE';
+
+    recognition.onresult = (event) => {
+        const text = event.results[event.results.length - 1].transcript.toLowerCase();
+
+        // PHASE 0: STARTAUSLÖSER
+        if (phase === 0 && text.includes("zusammen")) {
+            phase = 1;
+            if (navigator.vibrate) navigator.vibrate(50); // Heimliches Vibrations-Signal
+            return;
+        }
+
+        // PHASE 1: KARTENFARBE
+        if (phase === 1) {
+            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; phase = 2; }
+            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; phase = 2; }
+            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; phase = 2; }
+            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; phase = 2; }
+            return;
+        }
+
+        // PHASE 2: KARTENWERT RECHNEN (Addieren)
+        if (phase === 2) {
+            if (text.includes("einmal")) kartenWert += 1;
+            if (text.includes("zweimal")) kartenWert += 2;
+            if (text.includes("dreimal")) kartenWert += 3;
+            if (text.includes("viermal")) kartenWert += 4;
+            if (text.includes("hand")) kartenWert += 5;
+            if (text.includes("händen")) kartenWert += 10;
+
+            if (text.includes("reihenfolge")) {
+                phase = 3; // Rechnen beendet
+            }
+            return;
+        }
+
+        // PHASE 3: NAME & DATUM EXTRAHIEREN
+        if (phase === 3 && text.includes("dein datum war der")) {
+            // Holt das Wort VOR "dein" als Namen
+            const teile = text.split("dein datum war der");
+            const worteVorher = teile[0].trim().split(" ");
+            zuschauerName = worteVorher[worteVorher.length - 1]; // Letztes Wort vor "dein"
+            
+            // Holt den Text nach "war der" bis zum Wort "also"
+            if (text.includes("also")) {
+                const datumsTeil = teile[1].split("also")[0].trim();
+                geburtsDatum = datumsTeil;
+                
+                recognition.stop(); // Mikrofon aus, Berechnung fertig!
+                phase = 4; // Wartet jetzt nur noch auf den Touch des Zuschauers
+            }
+        }
+    };
+
+    // Verhindert das Aufhängen bei Stille
+    recognition.onend = () => { if (phase < 4) recognition.start(); };
+    recognition.start();
+
+    // DER ZUSCHAUER-STARTSCHUSS (Touch/Klopfen auf den schwarzen Bildschirm)
+    document.body.addEventListener('click', () => {
+        if (phase === 4) {
+            starteMagischeEnthuellung();
+        }
+    });
+
+    function starteMagischeEnthuellung() {
+        const screen = document.getElementById("reveal-screen");
+        const textFeld = document.getElementById("prediction-text");
+        const kartenFeld = document.getElementById("card-display");
+        
+        screen.style.display = "flex"; // Bildschirm einschalten
+
+        // PRÜFEN OB HEUTE GEBURTSTAG IST
+        const heute = new Date();
+        const tagHeute = heute.getDate();
+        const monatHeute = heute.getMonth() + 1; // Januar ist 0
+        const datumStringHeute = tagHeute + "." + (monatHeute < 10 ? "0" + monatHeute : monatHeute);
+
+        // Name sauber formatieren (Erster Buchstabe groß)
+        const nameFormatiert = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
+
+        // Wert in Text umwandeln für As, Bube, Dame, König
+        let wertText = kartenWert;
+        if (kartenWert === 1) wertText = "Ass";
+        if (kartenWert === 11) wertText = "Bube";
+        if (kartenWert === 12) wertText = "Dame";
+        if (kartenWert === 13) wertText = "König";
+
+        // WEICHE: GEBURTSTAG ODER NORMALER TAG
+        if (geburtsDatum.includes(datumStringHeute)) {
+            textFeld.innerText = nameFormatiert + ", heute ist dein GEBURTSTAG! Du hättest an jedem Tag des Jahres hier sein können... aber das Schicksal wollte es genau heute.";
+        } else {
+            textFeld.innerText = nameFormatiert + ", du wirst als Datum den " + geburtsDatum + " nennen.";
+        }
+
+        // Nach 5 Sekunden verblasst der Text und die Spielkarte erscheint aus dem Nichts
+        setTimeout(() => {
+            textFeld.style.opacity = "0";
+            setTimeout(() => {
+                textFeld.style.display = "none";
+                kartenFeld.innerText = kartenFarbe + "\n" + wertText;
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Magisches Dreifach-Vibrieren beim Erscheinen
+            }, 2000);
+        }, 5000);
+    }
+
+    // NOTAUSSTIEG (3 Sekunden oben links halten)
+    let exitTimer;
+    document.getElementById('emergency-exit').addEventListener('touchstart', () => {
+        exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
+    });
+    document.getElementById('emergency-exit').addEventListener('touchend', () => { clearTimeout(exitTimer); });
+</script>
+</body>
+</html>
