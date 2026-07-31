@@ -47,12 +47,19 @@ html<!DOCTYPE html>
     recognition.onresult = (event) => {
         const text = event.results[event.results.length - 1].transcript.toLowerCase();
 
-        // PHASE 0: STARTAUSLÖSER
-        if (phase === 0 && text.includes("zusammen")) {
-            phase = 1;
-            if (navigator.vibrate) navigator.vibrate(50); // Heimliches Vibrations-Signal
-            return;
-        }
+// PHASE 0: STARTAUSLÖSER
+if (phase === 0 && text.includes("zusammen")) {
+    phase = 1;
+    
+    // ZWINGT DAS HANDY ZU VIBRIEREN (0,2 Sekunden lang)
+    if (navigator.vibrate) {
+        navigator.vibrate(200); 
+    } else if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(200);
+    }
+    
+    return;
+}
 
         // PHASE 1: KARTENFARBE
         if (phase === 1) {
