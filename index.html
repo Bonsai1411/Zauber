@@ -63,18 +63,18 @@ html<!DOCTYPE html>
         }
         text = text.toLowerCase();
 
-        // PHASE 0: STARTAUSLÖSER (Sucht im Text nach "zusammen")
+ // PHASE 0: STARTAUSLÖSER (Sucht im Text nach "zusammen")
         if (phase === 0 && text.indexOf("zusammen") !== -1) {
             phase = 1;
             
-            // AGGRESSIVES VIBRATIONSSIGNAL (Dreimal kurz hintereinander)
-            if (navigator.vibrate) {
-                navigator.vibrate([200, 100, 200]); 
-            }
+            // LAUTLOSER LICHTBLITZ (Bildschirm blitzt kurz auf für 150 Millisekunden)
+            document.body.style.backgroundColor = "#555555"; 
+            setTimeout(() => {
+                document.body.style.backgroundColor = "#000000"; // Sofort wieder OLED-Schwarz
+            }, 150);
+            
             return;
-    
-    return;
-}
+        }
 
         // PHASE 1: KARTENFARBE
         if (phase === 1) {
