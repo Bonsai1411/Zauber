@@ -33,30 +33,45 @@ html<!DOCTYPE html>
     </div>
 
 <script>
-    let phase = 0; // 0 = Standby, 1 = Farbe, 2 = Wert, 3 = Name/Datum, 4 = Bereit für Zuschauer
-    let kartenFarbe = "";
+    let phase = 0; 
+    let kartsFarbe = "";
     let kartenWert = 0;
     let zuschauerName = "";
     let geburtsDatum = "";
 
+    // ZWINGT DEN BROWSER IN DEN VOLLBILDMODUS BEI BERÜHRUNG
+    document.documentElement.addEventListener('click', () => {
+        // Blendet die Leisten oben und unten bei Samsung komplett aus!
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        }
+        
+        // EINMALIGES TEST-VIBRIEREN BEIM TIPPEN 
+        // So wissen Sie sofort, ob das Handy physikalisch vibrieren darf!
+        if (navigator.vibrate) navigator.vibrate(100);
+    });
+
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true; // JETZT AUCH LIVE-WORT-ERKENNUNG OHNE PAUSE!
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
-        const text = event.results[event.results.length - 1].transcript.toLowerCase();
+        let text = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            text += event.results[i][0].transcript;
+        }
+        text = text.toLowerCase();
 
-// PHASE 0: STARTAUSLÖSER
-if (phase === 0 && text.includes("zusammen")) {
-    phase = 1;
-    
-    // ZWINGT DAS HANDY ZU VIBRIEREN (0,2 Sekunden lang)
-    if (navigator.vibrate) {
-        navigator.vibrate(200); 
-    } else if (window.navigator && window.navigator.vibrate) {
-        window.navigator.vibrate(200);
-    }
+        // PHASE 0: STARTAUSLÖSER (Sucht im Text nach "zusammen")
+        if (phase === 0 && text.indexOf("zusammen") !== -1) {
+            phase = 1;
+            
+            // AGGRESSIVES VIBRATIONSSIGNAL (Dreimal kurz hintereinander)
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]); 
+            }
+            return;
     
     return;
 }
