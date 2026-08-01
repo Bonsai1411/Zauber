@@ -63,10 +63,14 @@
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
-        let text = "";
-        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex]) {
-            text = event.results[event.resultIndex].transcript.toLowerCase().trim();
+        // LÜCKENLOSER TEXT-ABGRIFF: Durchsucht das gesamte Android-Archiv bei jedem Wort!
+        let kompletterText = "";
+        for (let i = 0; i < event.results.length; ++i) {
+            if (event.results[i] && event.results[i][0]) {
+                kompletterText += event.results[i][0].transcript;
+            }
         }
+        let text = kompletterText.toLowerCase().trim();
 
         if (!text) return;
 
@@ -100,7 +104,7 @@
             }
         }
 
-        // PHASE 2: WERT RECHNEN (Hier wurden die Tippfehler "hetzt" und "Pattern" komplett beseitigt)
+        // PHASE 2: WERT RECHNEN
         if (phase === 2) {
             let jetzt = Date.now();
             
