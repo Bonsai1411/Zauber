@@ -15,7 +15,7 @@
         
         #debug-console {
             display: none; position: fixed; bottom: 10px; left: 10px; right: 10px;
-            height: 50%; background: #111; color: #aaa; font-family: monospace;
+            height: 55%; background: #111; color: #aaa; font-family: monospace;
             font-size: 13px; padding: 10px; overflow-y: auto; border: 1px solid #333; z-index: 6000;
         }
     </style>
@@ -64,13 +64,16 @@
 
     recognition.onresult = (event) => {
         let text = "";
-        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex][0]) {
-            text = event.results[event.resultIndex][0].transcript.toLowerCase().trim();
+        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex]) {
+            text = event.results[event.resultIndex].transcript.toLowerCase().trim();
         }
 
         if (!text) return;
 
-        consoleDiv.innerHTML = "<b>Gehört (Live):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
+        // Standard-Ansicht während des Trick-Ablaufs
+        if (phase < 4) {
+            consoleDiv.innerHTML = "<b>Gehört (Live):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
+        }
 
         // PHASE 0: STARTAUSLÖSER
         if (phase === 0 && (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen"))) {
@@ -107,7 +110,7 @@
             if (text.includes("dreimal") && (jetzt - sperreWorte.dreimal > 10000)) { kartenWert += 3; logToConsole("+3 (dreimal)"); sperreWorte.dreimal = jetzt; }
             if (text.includes("viermal") && (jetzt - sperreWorte.viermal > 10000)) { kartenWert += 4; logToConsole("+4 (viermal)"); sperreWorte.viermal = jetzt; }
             if (text.includes("hand") && (jetzt - sperreWorte.hand > 10000))   { kartenWert += 5; logToConsole("+5 (hand)"); sperreWorte.hand = jetzt; }
-            if (text.includes("händen") && (jetzt - sperreWorte.händen > 10000)) { kartenWert += 10; logToConsole("+10 (händen)"); sperreWorte.händen = jetzt; }
+            if (text.includes("händen") && (jetzt - sperreWorte.händen > 10000)) { kartenWert += 10; logToConsole("+10 (händen)"); sperreWorte.händen = Pattern; }
 
             if (text.includes("reihenfolge")) {
                 phase = 3;
@@ -122,30 +125,26 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN (Super intelligent und pausenunabhängig)
+        // PHASE 3: NAME & DATUM EXTRAHIEREN
         if (phase === 3) {
-            // Sobald Ihr finales Stopp-Wort "also" fällt, schneiden wir messerscharf den Satz auf!
             if (text.includes("also")) {
                 try {
                     let teile = text.split("also");
-                    let linkerTeil = teile[0].trim(); // Alles was VOR "also" gesagt wurde
-                    let rechterTeil = teile[1].trim(); // Alles was NACH "also" gesagt wurde
+                    let linkerTeil = teile[0].trim(); 
+                    let rechterTeil = teile[1].trim(); 
                     
-                    // Filter für das Datum: Nimmt einfach das erste Wort nach "also" (z.B. "die" oder direkt das Datum)
                     let datumsListe = rechterTeil.split(" ");
-                    geburtsDatum = datumsListe[0];
+                    geburtsDatum = datumsListe[0]; // Das erste Wort direkt nach "also"
 
-                    // Filter für den Namen: Geht den linken Teil rückwärts durch und sucht nach dem Namen vor dem Wort "datum"
                     let linkeWorte = linkerTeil.split(" ");
                     let datumIndex = linkeWorte.indexOf("datum");
                     
                     if (datumIndex > 0) {
-                        zuschauerName = linkeWorte[datumIndex - 1]; // Das Wort direkt vor "datum" (z.B. "Markus, dein datum...")
+                        zuschauerName = linkeWorte[datumIndex - 1]; 
                     } else {
-                        zuschauerName = linkeWorte[0]; // Notfall-Sicherung
+                        zuschauerName = linkeWorte[linkeWorte.length - 1]; 
                     }
 
-                    // Namen von Android-Wiederholungen befreien
                     zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
                     zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
 
@@ -157,13 +156,21 @@
                     
                     let istGeburtstag = (text.includes(datumHeuteString) || datumHeuteString.includes(geburtsDatum)) ? "JA 🎂" : "NEIN";
                     
-                    logToConsole("-> BERECHNUNG ABGESCHLOSSEN!");
-                    logToConsole("Name: " + zuschauerName + " | Datum: " + geburtsDatum + " | Geburtstag: " + istGeburtstag);
-                    
-                    recognition.stop(); // Mikrofon aus
                     phase = 4; // Trick erfolgreich beendet!
+                    recognition.stop(); // Mikrofon aus
+                    
+                    // DIE DETEKTIV-ANZEIGE: Macht das Fenster knallgrün und knallt das Ergebnis ganz nach oben!
+                    consoleDiv.style.backgroundColor = "#003300";
+                    consoleDiv.style.color = "#ffffff";
+                    consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
+                                           "<p style='font-size: 16px; color: #00ff00;'><b>Gezogene Karte:</b> " + kartenFarbe + " " + kartenWert + "</p>" +
+                                           "<p style='font-size: 16px;'><b>Erkannter Name:</b> " + zuschauerName + "</p>" +
+                                           "<p style='font-size: 16px;'><b>Erkanntes Datum:</b> " + geburtsDatum + "</p>" +
+                                           "<p style='font-size: 16px;'><b>Geburtstag heute:</b> " + istGeburtstag + "</p>" +
+                                           "<hr><small>Verlauf: " + text + "</small>";
+                    
                 } catch(e) {
-                    // Falls mitten im Wort unterbrochen wurde, fängt die Schleife es beim nächsten Wort ab
+                    // Fehler abfangen
                 }
             }
             return;
