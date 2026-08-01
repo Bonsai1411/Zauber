@@ -100,7 +100,7 @@
             }
         }
 
-        // PHASE 2: WERT RECHNEN
+        // PHASE 2: WERT RECHNEN (Hier wurden die Tippfehler "hetzt" und "Pattern" komplett beseitigt)
         if (phase === 2) {
             let jetzt = Date.now();
             
@@ -124,47 +124,41 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN (Perfektioniert für das Wort "verdeckt")
+        // PHASE 3: NAME & DATUM EXTRAHIEREN
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeckten")) {
                 try {
                     let worte = text.split(" ");
                     
-                    // 1. Filter für den Namen: Sucht das Wort direkt vor "datum"
                     let datumIndex = worte.indexOf("datum");
                     if (datumIndex > 0) {
                         zuschauerName = worte[datumIndex - 1];
                     } else {
-                        zuschauerName = worte[0]; // Notfall-Sicherung: Erstes Wort des Satzes
+                        zuschauerName = worte[0]; 
                     }
                     
-                    // Befreit den Namen von eventuellen Android-Doppelungen und macht ihn schön
                     zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
                     zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
 
-                    // 2. Filter für das Datum: Holt alles zwischen "der" und "verdeckt"
                     let derIndex = worte.indexOf("der");
                     let verdecktIndex = text.includes("verdeckten") ? worte.indexOf("verdeckten") : worte.indexOf("verdeckt");
                     
                     if (derIndex > 0 && verdecktIndex > derIndex) {
-                        // Schneidet alle Wörter dazwischen heraus und klebt sie zusammen
                         let datumsWorte = worte.slice(derIndex + 1, verdecktIndex);
                         geburtsDatum = datumsWorte.join(" ").replace(/[,.]/g, "").trim();
                     } else {
                         geburtsDatum = "unbekannt";
                     }
 
-                    // 3. Heutiges Echtzeit-Datum für den Geburtstags-Abgleich berechnen
                     const heute = new Date();
                     const tagHeute = heute.getDate();
                     const monatHeute = heute.getMonth() + 1;
                     
-                    // Formate für den Abgleich (z.B. "0108" oder "18")
                     const tagString = tagHeute < 10 ? "0" + tagHeute : "" + tagHeute;
                     const monatString = monatHeute < 10 ? "0" + monatHeute : "" + monatHeute;
                     
-                    const datumFormat1 = tagString + "." + monatString; // "01.08."
-                    const datumFormat2 = tagHeute + "." + monatHeute;   // "1.8."
+                    const datumFormat1 = tagString + "." + monatString; 
+                    const datumFormat2 = tagHeute + "." + monatHeute;   
 
                     let istGeburtstag = "NEIN";
                     if (geburtsDatum.includes(datumFormat1) || geburtsDatum.includes(datumFormat2) || text.includes(datumFormat1) || text.includes(datumFormat2)) {
@@ -172,9 +166,8 @@
                     }
                     
                     phase = 4; 
-                    recognition.stop(); // Mikrofon sofort aus!
+                    recognition.stop(); 
                     
-                    // Das unübersehbare, dunkelgrüne Sieges-Fenster
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
@@ -192,3 +185,14 @@
         }
     };
 
+    recognition.onend = () => { if (phase < 4) recognition.start(); };
+    recognition.start();
+
+    let exitTimer;
+    document.getElementById('emergency-exit').addEventListener('touchstart', () => {
+        exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
+    });
+    document.getElementById('emergency-exit').addEventListener('touchend', () => { clearTimeout(exitTimer); });
+</script>
+</body>
+</html>
