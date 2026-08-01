@@ -79,7 +79,10 @@
     recognition.onresult = (event) => {
         let kompletterText = "";
         for (let i = 0; i < event.results.length; ++i) {
-            kompletterText += event.results[i].transcript;
+            // HIER WAR DER FEHLER: Das [0] hat gefehlt! Jetzt ausgebessert.
+            if (event.results[i] && event.results[i][0]) {
+                kompletterText += event.results[i][0].transcript;
+            }
         }
         let text = kompletterText.toLowerCase().trim();
 
@@ -132,18 +135,14 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN (Absolut fehlerfrei repariert)
         if (phase === 3 && text.includes("dein datum war der")) {
             try {
                 const teile = text.split("dein datum war der");
-                
-                // Holt den Namen sauber aus dem ersten Teil des Satzes (vor "dein")
                 const vorDein = teile[0].trim();
                 const nameListe = vorDein.split(" ");
                 zuschauerName = nameListe[nameListe.length - 1]; 
                 
                 if (text.includes("also")) {
-                    // Holt das Datum sauber aus dem zweiten Teil (zwischen "war der" und "also")
                     const nachWarDer = teile[1].trim();
                     const datumsTeile = nachWarDer.split("also");
                     geburtsDatum = datumsTeile[0].trim();
@@ -151,18 +150,16 @@
                     logToConsole("-> BERECHNUNG ABGESCHLOSSEN!");
                     logToConsole("Name: " + zuschauerName + " | Datum: " + geburtsDatum);
                     
-                    recognition.stop(); // Schaltet das Mikrofon stumm!
-                    phase = 4; // Absolut bereit für Zuschauer-Touch
+                    recognition.stop(); 
+                    phase = 4; 
                 }
             } catch(e) { 
-                // Sicherheitsnetz, falls beim Sprechen gehaspelt wurde
                 zuschauerName = "Zuschauer"; 
                 geburtsDatum = "heute";
             }
             return;
         }
     };
-
 
     recognition.onend = () => { if (phase < 4) recognition.start(); };
     recognition.start();
@@ -218,4 +215,3 @@
     }
 </script>
 </body>
-</html>
