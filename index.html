@@ -64,13 +64,12 @@
 
     recognition.onresult = (event) => {
         let text = "";
-        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex]) {
-            text = event.results[event.resultIndex].transcript.toLowerCase().trim();
+        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex][0]) {
+            text = event.results[event.resultIndex][0].transcript.toLowerCase().trim();
         }
 
         if (!text) return;
 
-        // Standard-Ansicht während des Trick-Ablaufs
         if (phase < 4) {
             consoleDiv.innerHTML = "<b>Gehört (Live):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
         }
@@ -110,7 +109,7 @@
             if (text.includes("dreimal") && (jetzt - sperreWorte.dreimal > 10000)) { kartenWert += 3; logToConsole("+3 (dreimal)"); sperreWorte.dreimal = jetzt; }
             if (text.includes("viermal") && (jetzt - sperreWorte.viermal > 10000)) { kartenWert += 4; logToConsole("+4 (viermal)"); sperreWorte.viermal = jetzt; }
             if (text.includes("hand") && (jetzt - sperreWorte.hand > 10000))   { kartenWert += 5; logToConsole("+5 (hand)"); sperreWorte.hand = jetzt; }
-            if (text.includes("händen") && (jetzt - sperreWorte.händen > 10000)) { kartenWert += 10; logToConsole("+10 (händen)"); sperreWorte.händen = Pattern; }
+            if (text.includes("händen") && (jetzt - sperreWorte.händen > 10000)) { kartenWert += 10; logToConsole("+10 (händen)"); sperreWorte.händen = jetzt; }
 
             if (text.includes("reihenfolge")) {
                 phase = 3;
@@ -148,7 +147,7 @@
                     zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
                     zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
 
-                    // Geburtstags-Weiche für das Test-Log berechnen
+                    // Geburtstag abgleichen
                     const heute = new Date();
                     const tagHeute = heute.getDate();
                     const monatHeute = heute.getMonth() + 1;
@@ -156,10 +155,10 @@
                     
                     let istGeburtstag = (text.includes(datumHeuteString) || datumHeuteString.includes(geburtsDatum)) ? "JA 🎂" : "NEIN";
                     
-                    phase = 4; // Trick erfolgreich beendet!
-                    recognition.stop(); // Mikrofon aus
+                    phase = 4; 
+                    recognition.stop(); 
                     
-                    // DIE DETEKTIV-ANZEIGE: Macht das Fenster knallgrün und knallt das Ergebnis ganz nach oben!
+                    // Box knallgrün einfärben
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
