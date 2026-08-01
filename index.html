@@ -64,8 +64,8 @@
 
     recognition.onresult = (event) => {
         let text = "";
-        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex][0]) {
-            text = event.results[event.resultIndex][0].transcript.toLowerCase().trim();
+        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex]) {
+            text = event.results[event.resultIndex].transcript.toLowerCase().trim();
         }
 
         if (!text) return;
@@ -124,41 +124,57 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN
+        // PHASE 3: NAME & DATUM EXTRAHIEREN (Perfektioniert für das Wort "verdeckt")
         if (phase === 3) {
-            if (text.includes("also")) {
+            if (text.includes("verdeckt") || text.includes("verdeckten")) {
                 try {
-                    let teile = text.split("also");
-                    let linkerTeil = teile[0].trim(); 
-                    let rechterTeil = teile[1].trim(); 
+                    let worte = text.split(" ");
                     
-                    let datumsListe = rechterTeil.split(" ");
-                    geburtsDatum = datumsListe[0]; // Das erste Wort direkt nach "also"
-
-                    let linkeWorte = linkerTeil.split(" ");
-                    let datumIndex = linkeWorte.indexOf("datum");
-                    
+                    // 1. Filter für den Namen: Sucht das Wort direkt vor "datum"
+                    let datumIndex = worte.indexOf("datum");
                     if (datumIndex > 0) {
-                        zuschauerName = linkeWorte[datumIndex - 1]; 
+                        zuschauerName = worte[datumIndex - 1];
                     } else {
-                        zuschauerName = linkeWorte[linkeWorte.length - 1]; 
+                        zuschauerName = worte[0]; // Notfall-Sicherung: Erstes Wort des Satzes
                     }
-
+                    
+                    // Befreit den Namen von eventuellen Android-Doppelungen und macht ihn schön
                     zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
                     zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
 
-                    // Geburtstag abgleichen
+                    // 2. Filter für das Datum: Holt alles zwischen "der" und "verdeckt"
+                    let derIndex = worte.indexOf("der");
+                    let verdecktIndex = text.includes("verdeckten") ? worte.indexOf("verdeckten") : worte.indexOf("verdeckt");
+                    
+                    if (derIndex > 0 && verdecktIndex > derIndex) {
+                        // Schneidet alle Wörter dazwischen heraus und klebt sie zusammen
+                        let datumsWorte = worte.slice(derIndex + 1, verdecktIndex);
+                        geburtsDatum = datumsWorte.join(" ").replace(/[,.]/g, "").trim();
+                    } else {
+                        geburtsDatum = "unbekannt";
+                    }
+
+                    // 3. Heutiges Echtzeit-Datum für den Geburtstags-Abgleich berechnen
                     const heute = new Date();
                     const tagHeute = heute.getDate();
                     const monatHeute = heute.getMonth() + 1;
-                    const datumHeuteString = (tagHeute < 10 ? "0" + tagHeute : tagHeute) + "." + (monatHeute < 10 ? "0" + monatHeute : monatHeute);
                     
-                    let istGeburtstag = (text.includes(datumHeuteString) || datumHeuteString.includes(geburtsDatum)) ? "JA 🎂" : "NEIN";
+                    // Formate für den Abgleich (z.B. "0108" oder "18")
+                    const tagString = tagHeute < 10 ? "0" + tagHeute : "" + tagHeute;
+                    const monatString = monatHeute < 10 ? "0" + monatHeute : "" + monatHeute;
+                    
+                    const datumFormat1 = tagString + "." + monatString; // "01.08."
+                    const datumFormat2 = tagHeute + "." + monatHeute;   // "1.8."
+
+                    let istGeburtstag = "NEIN";
+                    if (geburtsDatum.includes(datumFormat1) || geburtsDatum.includes(datumFormat2) || text.includes(datumFormat1) || text.includes(datumFormat2)) {
+                        istGeburtstag = "JA 🎂";
+                    }
                     
                     phase = 4; 
-                    recognition.stop(); 
+                    recognition.stop(); // Mikrofon sofort aus!
                     
-                    // Box knallgrün einfärben
+                    // Das unübersehbare, dunkelgrüne Sieges-Fenster
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
@@ -166,24 +182,13 @@
                                            "<p style='font-size: 16px;'><b>Erkannter Name:</b> " + zuschauerName + "</p>" +
                                            "<p style='font-size: 16px;'><b>Erkanntes Datum:</b> " + geburtsDatum + "</p>" +
                                            "<p style='font-size: 16px;'><b>Geburtstag heute:</b> " + istGeburtstag + "</p>" +
-                                           "<hr><small>Verlauf: " + text + "</small>";
+                                           "<hr><small>Vollständiger Textverlauf: " + text + "</small>";
                     
                 } catch(e) {
-                    // Fehler abfangen
+                    logToConsole("Fehler beim Filtern: " + e.message);
                 }
             }
             return;
         }
     };
 
-    recognition.onend = () => { if (phase < 4) recognition.start(); };
-    recognition.start();
-
-    let exitTimer;
-    document.getElementById('emergency-exit').addEventListener('touchstart', () => {
-        exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
-    });
-    document.getElementById('emergency-exit').addEventListener('touchend', () => { clearTimeout(exitTimer); });
-</script>
-</body>
-</html>
