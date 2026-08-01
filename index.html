@@ -83,11 +83,12 @@
     recognition.interimResults = true; 
     recognition.lang = 'de-DE';
 
- recognition.onresult = (event) => {
-        // Die modernste Formel, um den Text fehlerfrei aus Android auszulesen:
-        const resultIndex = event.resultIndex;
-        const transcript = event.results[resultIndex][0].transcript;
-        let text = transcript.toLowerCase().trim();
+    recognition.onresult = (event) => {
+        let text = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            text += event.results[i].transcript;
+        }
+        text = text.toLowerCase().trim();
 
         // Zeige im Kontrollfenster LIVE an, was das Handy hört
         consoleDiv.innerHTML = "<b>Gehört:</b> " + text + "<br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert;
@@ -120,19 +121,15 @@
             }
         }
 
-// PHASE 2: WERT RECHNEN (Maßgeschneidert für Ihre Performance)
+        // PHASE 2: WERT RECHNEN
         if (phase === 2) {
-            let jetzt = Date.now();
-
-            // Zahlenwörter behalten die 2-Sekunden-Sperre für Mehrfachnutzung
-            if (text.includes("einmal") && (jetzt - sperreWorte.einmal > 2000)) { kartenWert += 1; logToConsole("+1 (einmal)"); sperreWorte.einmal = jetzt; }
-            if (text.includes("zweimal") && (jetzt - sperreWorte.zweimal > 2000)) { kartenWert += 2; logToConsole("+2 (zweimal)"); sperreWorte.zweimal = jetzt; }
-            if (text.includes("dreimal") && (jetzt - sperreWorte.dreimal > 2000)) { kartenWert += 3; logToConsole("+3 (dreimal)"); sperreWorte.dreimal = jetzt; }
-            if (text.includes("viermal") && (jetzt - sperreWorte.viermal > 2000)) { kartenWert += 4; logToConsole("+4 (viermal)"); sperreWorte.viermal = jetzt; }
-            
-            // "Hand" und "Händen" werden nach EINMALIGER Nutzung komplett eingefroren
-            if (text.includes("hand") && !text.includes("verarbeitet_hand"))   { kartenWert += 5; logToConsole("+5 (hand)"); text += " verarbeitet_hand"; }
-            if (text.includes("händen") && !text.includes("verarbeitet_haenden")) { kartenWert += 10; logToConsole("+10 (händen)"); text += " verarbeitet_haenden"; }
+            let wertGeaendert = false;
+            if (text.includes("einmal")) { kartenWert += 1; wertGeaendert = true; logToConsole("+1 (einmal)"); }
+            if (text.includes("zweimal")) { kartenWert += 2; wertGeaendert = true; logToConsole("+2 (zweimal)"); }
+            if (text.includes("dreimal")) { kartenWert += 3; wertGeaendert = true; logToConsole("+3 (dreimal)"); }
+            if (text.includes("viermal")) { kartenWert += 4; wertGeaendert = true; logToConsole("+4 (viermal)"); }
+            if (text.includes("hand"))   { kartenWert += 5; wertGeaendert = true; logToConsole("+5 (hand)"); }
+            if (text.includes("händen")) { kartenWert += 10; wertGeaendert = true; logToConsole("+10 (händen)"); }
 
             if (text.includes("reihenfolge")) {
                 phase = 3;
