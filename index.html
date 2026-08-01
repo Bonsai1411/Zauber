@@ -103,7 +103,7 @@
             }
         }
 
-        // PHASE 2: WERT RECHNEN (Hier wurde der Fehler "Pattern" restlos in "jetzt" korrigiert!)
+        // PHASE 2: WERT RECHNEN
         if (phase === 2) {
             let jetzt = Date.now();
             
@@ -127,12 +127,13 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN
+        // PHASE 3: NAME & DATUM EXTRAHIEREN (Meister-Zuweisung)
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
                 try {
                     let worte = text.split(" ");
                     
+                    // 1. Namen messerscharf holen: Das Wort direkt VOR dem Begriff "dein" oder "datum"
                     let datumIndex = worte.indexOf("datum");
                     let deinIndex = worte.indexOf("dein");
                     let targetIndex = datumIndex > 0 ? datumIndex : deinIndex;
@@ -140,15 +141,17 @@
                     if (targetIndex > 0) {
                         zuschauerName = worte[targetIndex - 1];
                     } else {
-                        zuschauerName = "Daniel"; 
+                        zuschauerName = "Daniel"; // Erprobter Standard-Wert
                     }
                     
+                    // Säubert eventuelle Android-Reste
                     zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
                     zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
 
+                    // 2. Datum messerscharf holen: Zieht alle Ziffern heraus
                     let zahlenGefunden = text.match(/\d+/g);
                     if (zahlenGefunden && zahlenGefunden.length >= 1) {
-                        let kombinierteZahlen = zahlenGefunden.join(""); 
+                        let kombinierteZahlen = zahlenGefunden.join(""); // Klebt z.B. "20" und "06" zu "2006" zusammen
                         if (kombinierteZahlen.length >= 4) {
                             geburtsDatum = kombinierteZahlen.substring(0,2) + "." + kombinierteZahlen.substring(2,4) + ".";
                         } else {
@@ -158,6 +161,7 @@
                         geburtsDatum = "20.06.";
                     }
 
+                    // Echtzeit-Abgleich für Geburtstag heute
                     const heute = new Date();
                     const tagHeute = heute.getDate();
                     const monatHeute = heute.getMonth() + 1;
@@ -170,6 +174,7 @@
                     phase = 4; 
                     recognition.stop(); 
                     
+                    // Der große dunkelgrüne Ergebnis-Kasten
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
@@ -191,6 +196,7 @@
     recognition.start();
 
     let exitTimer;
+
     document.getElementById('emergency-exit').addEventListener('touchstart', () => {
         exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
     });
