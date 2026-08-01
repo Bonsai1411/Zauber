@@ -63,15 +63,13 @@
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
-        // DER ABSOLUT SICHERE TEXT-ABGRIFF (Ohne Schleifen-Risiko!)
         let text = "";
         if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex][0]) {
             text = event.results[event.resultIndex][0].transcript.toLowerCase().trim();
         }
 
-        if (!text) return; // Wenn der Text leer ist, abbrechen
+        if (!text) return;
 
-        // Ihre Live-Übersicht im Test-Fenster
         consoleDiv.innerHTML = "<b>Gehört (Live):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
 
         // PHASE 0: STARTAUSLÖSER
@@ -124,41 +122,49 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN (Die unkaputtbare Version!)
-        if (phase === 3 && text.includes("dein datum war der")) {
-            try {
-                // Trennt den Satz exakt am Schlüsselwort auf
-                let teile = text.split("dein datum war der");
-                
-                // Holt den Namen (das letzte Wort vor dem Cut) und befreit es von Android-Wiederholungen
-                let vorDein = teile[0].trim();
-                let nameListe = vorDein.split(" ");
-                let roherName = nameListe[nameListe.length - 1];
-                
-                // Genialer Filter: Macht aus "danieldanieldaniel" einfach ein sauberes "Daniel"
-                zuschauerName = roherName.replace(/(.+)\1+/g, "$1"); 
-
-                if (text.includes("also")) {
-                    let nachWarDer = teile[1].trim();
-                    let datumsTeile = nachWarDer.split("also");
-                    geburtsDatum = datumsTeile[0].trim();
+        // PHASE 3: NAME & DATUM EXTRAHIEREN (Super intelligent und pausenunabhängig)
+        if (phase === 3) {
+            // Sobald Ihr finales Stopp-Wort "also" fällt, schneiden wir messerscharf den Satz auf!
+            if (text.includes("also")) {
+                try {
+                    let teile = text.split("also");
+                    let linkerTeil = teile[0].trim(); // Alles was VOR "also" gesagt wurde
+                    let rechterTeil = teile[1].trim(); // Alles was NACH "also" gesagt wurde
                     
-                    // Live-Überprüfung des Geburtstags für das Testfenster
+                    // Filter für das Datum: Nimmt einfach das erste Wort nach "also" (z.B. "die" oder direkt das Datum)
+                    let datumsListe = rechterTeil.split(" ");
+                    geburtsDatum = datumsListe[0];
+
+                    // Filter für den Namen: Geht den linken Teil rückwärts durch und sucht nach dem Namen vor dem Wort "datum"
+                    let linkeWorte = linkerTeil.split(" ");
+                    let datumIndex = linkeWorte.indexOf("datum");
+                    
+                    if (datumIndex > 0) {
+                        zuschauerName = linkeWorte[datumIndex - 1]; // Das Wort direkt vor "datum" (z.B. "Markus, dein datum...")
+                    } else {
+                        zuschauerName = linkeWorte[0]; // Notfall-Sicherung
+                    }
+
+                    // Namen von Android-Wiederholungen befreien
+                    zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
+                    zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
+
+                    // Geburtstags-Weiche für das Test-Log berechnen
                     const heute = new Date();
                     const tagHeute = heute.getDate();
                     const monatHeute = heute.getMonth() + 1;
                     const datumHeuteString = (tagHeute < 10 ? "0" + tagHeute : tagHeute) + "." + (monatHeute < 10 ? "0" + monatHeute : monatHeute);
                     
-                    let istGeburtstag = (geburtsDatum.includes(datumHeuteString) || datumHeuteString.includes(geburtsDatum)) ? "JA 🎂" : "NEIN";
+                    let istGeburtstag = (text.includes(datumHeuteString) || datumHeuteString.includes(geburtsDatum)) ? "JA 🎂" : "NEIN";
                     
                     logToConsole("-> BERECHNUNG ABGESCHLOSSEN!");
                     logToConsole("Name: " + zuschauerName + " | Datum: " + geburtsDatum + " | Geburtstag: " + istGeburtstag);
                     
                     recognition.stop(); // Mikrofon aus
-                    phase = 4; // Trick beendet
+                    phase = 4; // Trick erfolgreich beendet!
+                } catch(e) {
+                    // Falls mitten im Wort unterbrochen wurde, fängt die Schleife es beim nächsten Wort ab
                 }
-            } catch(e) {
-                // Passiert nichts, falls Android mitten im Satz unterbricht
             }
             return;
         }
@@ -167,7 +173,6 @@
     recognition.onend = () => { if (phase < 4) recognition.start(); };
     recognition.start();
 
-    // NOTAUSSTIEG (3 Sekunden oben links halten) setzt alles zurück
     let exitTimer;
     document.getElementById('emergency-exit').addEventListener('touchstart', () => {
         exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
