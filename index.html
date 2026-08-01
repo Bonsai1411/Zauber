@@ -41,6 +41,7 @@
     function logToConsole(msg) {
         consoleDiv.innerHTML += "<br><span style='color:#00ff00'>" + msg + "</span>";
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        console.log(msg); // Druckt es zusätzlich in die F12-Laptop-Konsole!
     }
 
     let debugTimer;
@@ -63,15 +64,17 @@
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
+        // DIE UNKAPUTTBARE GOOGLE-STANDARD-FORMEL: Holt den Text absolut crash-sicher ab!
         let text = "";
-        if (event.results && event.results[event.resultIndex]) {
-            text = event.results[event.resultIndex].transcript.toLowerCase().trim();
+        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex][0]) {
+            text = event.results[event.resultIndex][0].transcript.toLowerCase().trim();
         }
 
         if (!text) return;
 
         if (phase < 4) {
             consoleDiv.innerHTML = "<b>Gehört (Live):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
+            console.log("Gehört: " + text); // Live-Vorschau in F12
         }
 
         // PHASE 0: STARTAUSLÖSER
@@ -100,7 +103,7 @@
             }
         }
 
-        // PHASE 2: WERT RECHNEN (Hier wurde der Fehler "Pattern" restlos beseitigt!)
+        // PHASE 2: WERT RECHNEN
         if (phase === 2) {
             let jetzt = Date.now();
             
@@ -126,16 +129,14 @@
 
         // PHASE 3: NAME & DATUM EXTRAHIEREN
         if (phase === 3) {
-            // Namen sicher als Text speichern
             if (zuschauerName === "" && text.length > 2) {
                 let ersteWorte = text.split(" ");
-                let roherNameText = ersteWorte || "Daniel";
+                let roherNameText = ersteWorte[0] || "Daniel";
                 roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
                 zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
                 logToConsole("-> NAME LOGGED: " + zuschauerName);
             }
 
-            // Zahlen für das Datum filtern
             let zahlen = text.match(/\d+/g);
             if (zahlen && zahlen.length >= 1) {
                 let roheZahl = zahlen.join("");
@@ -146,7 +147,6 @@
                 }
             }
 
-            // Stoppwort-Raster für jede Variante von "verdeckt"
             if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
                 try {
                     if (geburtsDatum === "") geburtsDatum = "20.06."; 
@@ -163,7 +163,6 @@
                     phase = 4; 
                     recognition.stop(); 
                     
-                    // Der große dunkelgrüne Ergebnis-Kasten springt an!
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
