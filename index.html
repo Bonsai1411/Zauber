@@ -63,7 +63,6 @@
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
-        // EXTREM STABILER ABGRIFF: Holt NUR das aktuell gesprochene Text-Paket! (Verhindert Wiederholungen)
         let text = "";
         if (event.results && event.results[event.resultIndex]) {
             text = event.results[event.resultIndex].transcript.toLowerCase().trim();
@@ -101,7 +100,7 @@
             }
         }
 
-        // PHASE 2: WERT RECHNEN
+        // PHASE 2: WERT RECHNEN (Fehler "Pattern" restlos entfernt!)
         if (phase === 2) {
             let jetzt = Date.now();
             
@@ -110,7 +109,7 @@
             if (text.includes("dreimal") && (jetzt - sperreWorte.dreimal > 10000)) { kartenWert += 3; logToConsole("+3 (dreimal)"); sperreWorte.dreimal = jetzt; }
             if (text.includes("viermal") && (jetzt - sperreWorte.viermal > 10000)) { kartenWert += 4; logToConsole("+4 (viermal)"); sperreWorte.viermal = jetzt; }
             if (text.includes("hand") && (jetzt - sperreWorte.hand > 10000))   { kartenWert += 5; logToConsole("+5 (hand)"); sperreWorte.hand = jetzt; }
-            if (text.includes("händen") && (jetzt - sperreWorte.händen > 10000)) { kartenWert += 10; logToConsole("+10 (händen)"); sperreWorte.händen = Pattern; }
+            if (text.includes("händen") && (jetzt - sperreWorte.händen > 10000)) { kartenWert += 10; logToConsole("+10 (händen)"); sperreWorte.händen = jetzt; }
 
             if (text.includes("reihenfolge")) {
                 phase = 3;
@@ -125,9 +124,8 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN (Absolut fehlertolerant!)
+        // PHASE 3: NAME & DATUM EXTRAHIEREN
         if (phase === 3) {
-            // Sucht nach dem Namen (oft das erste Wort des neuen Satzes nach der Pause)
             if (zuschauerName === "" && text.length > 2) {
                 let ersteWorte = text.split(" ");
                 zuschauerName = ersteWorte[0];
@@ -136,7 +134,6 @@
                 logToConsole("-> NAME POL_LOGGED: " + zuschauerName);
             }
 
-            // Sucht nach Zahlen im Satz für das Datum
             let zahlen = text.match(/\d+/g);
             if (zahlen && zahlen.length >= 1) {
                 let roheZahl = zahlen.join("");
@@ -147,10 +144,9 @@
                 }
             }
 
-            // Das absolut sichere Stoppwort-Raster: Reagiert auf jede Variante von "verdeckt"
             if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
                 try {
-                    if (geburtsDatum === "") geburtsDatum = "20.06."; // Sicherheitsnetz
+                    if (geburtsDatum === "") geburtsDatum = "20.06."; 
 
                     const heute = new Date();
                     const tagHeute = heute.getDate();
@@ -162,9 +158,8 @@
                     let istGeburtstag = geburtsDatum.includes(datumHeuteString) ? "JA 🎂" : "NEIN";
                     
                     phase = 4; 
-                    recognition.stop(); // Mikrofon sofort stumm!
+                    recognition.stop(); 
                     
-                    // Der große dunkelgrüne Ergebnis-Kasten springt an!
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
