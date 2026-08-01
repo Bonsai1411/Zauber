@@ -63,7 +63,6 @@
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
-        // LÜCKENLOSER TEXT-ABGRIFF: Durchsucht das gesamte Android-Archiv bei jedem Wort!
         let kompletterText = "";
         for (let i = 0; i < event.results.length; ++i) {
             if (event.results[i] && event.results[i][0]) {
@@ -132,42 +131,34 @@
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeckten")) {
                 try {
-                    let worte = text.split(" ");
-                    
-                    let datumIndex = worte.indexOf("datum");
-                    if (datumIndex > 0) {
-                        zuschauerName = worte[datumIndex - 1];
-                    } else {
-                        zuschauerName = worte[0]; 
-                    }
+                    let nachReihenfolge = text.split("reihenfolge");
+                    let nameTeil = nachReihenfolge[1].trim().split(" ");
+                    zuschauerName = nameTeil[0]; 
                     
                     zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
                     zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
 
-                    let derIndex = worte.indexOf("der");
-                    let verdecktIndex = text.includes("verdeckten") ? worte.indexOf("verdeckten") : worte.indexOf("verdeckt");
+                    let zahlenGefunden = text.match(/\d+/g); 
                     
-                    if (derIndex > 0 && verdecktIndex > derIndex) {
-                        let datumsWorte = worte.slice(derIndex + 1, verdecktIndex);
-                        geburtsDatum = datumsWorte.join(" ").replace(/[,.]/g, "").trim();
+                    if (zahlenGefunden && zahlenGefunden.length >= 1) {
+                        let roheZahl = zahlenGefunden.join(""); 
+                        if (roheZahl.length >= 4) {
+                            geburtsDatum = roheZahl.substring(0,2) + "." + roheZahl.substring(2,4) + ".";
+                        } else {
+                            geburtsDatum = zahlenGefunden.join(".");
+                        }
                     } else {
-                        geburtsDatum = "unbekannt";
+                        geburtsDatum = "20.06."; 
                     }
 
                     const heute = new Date();
                     const tagHeute = heute.getDate();
                     const monatHeute = heute.getMonth() + 1;
-                    
                     const tagString = tagHeute < 10 ? "0" + tagHeute : "" + tagHeute;
                     const monatString = monatHeute < 10 ? "0" + monatHeute : "" + monatHeute;
-                    
-                    const datumFormat1 = tagString + "." + monatString; 
-                    const datumFormat2 = tagHeute + "." + monatHeute;   
+                    const datumHeuteString = tagString + "." + monatString;
 
-                    let istGeburtstag = "NEIN";
-                    if (geburtsDatum.includes(datumFormat1) || geburtsDatum.includes(datumFormat2) || text.includes(datumFormat1) || text.includes(datumFormat2)) {
-                        istGeburtstag = "JA 🎂";
-                    }
+                    let istGeburtstag = geburtsDatum.includes(datumHeuteString) ? "JA 🎂" : "NEIN";
                     
                     phase = 4; 
                     recognition.stop(); 
@@ -175,7 +166,7 @@
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
-                                           "<p style='font-size: 16px; color: #00ff00;'><b>Gezogene Karte:</b> " + kartenFarbe + " " + kartenWert + "</p>" +
+                                           "<p style='font-size: 16px; color: #00ff00;'><b>Gezogene Karte:</b> " + kartenFarbe + " " + (kartenWert === 11 ? "Bube" : kartenWert === 12 ? "Dame" : kartenWert === 13 ? "König" : kartenWert === 14 || kartenWert === 1 ? "Ass" : kartenWert) + "</p>" +
                                            "<p style='font-size: 16px;'><b>Erkannter Name:</b> " + zuschauerName + "</p>" +
                                            "<p style='font-size: 16px;'><b>Erkanntes Datum:</b> " + geburtsDatum + "</p>" +
                                            "<p style='font-size: 16px;'><b>Geburtstag heute:</b> " + istGeburtstag + "</p>" +
