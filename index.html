@@ -127,41 +127,38 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN (Meister-Zuweisung)
+        // PHASE 3: NAME & DATUM EXTRAHIEREN
         if (phase === 3) {
+            if (zuschauerName === "") {
+                let ersteWorte = text.split(" ");
+                let roherNameText = ersteWorte[0] || "Daniel";
+                roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
+                zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
+            }
+
             if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
                 try {
-                    let worte = text.split(" ");
+                    let zahlenGefunden = text.match(/\d+/g); 
                     
-                    // 1. Namen messerscharf holen: Das Wort direkt VOR dem Begriff "dein" oder "datum"
-                    let datumIndex = worte.indexOf("datum");
-                    let deinIndex = worte.indexOf("dein");
-                    let targetIndex = datumIndex > 0 ? datumIndex : deinIndex;
-                    
-                    if (targetIndex > 0) {
-                        zuschauerName = worte[targetIndex - 1];
-                    } else {
-                        zuschauerName = "Daniel"; // Erprobter Standard-Wert
-                    }
-                    
-                    // Säubert eventuelle Android-Reste
-                    zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
-                    zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
-
-                    // 2. Datum messerscharf holen: Zieht alle Ziffern heraus
-                    let zahlenGefunden = text.match(/\d+/g);
-                    if (zahlenGefunden && zahlenGefunden.length >= 1) {
-                        let kombinierteZahlen = zahlenGefunden.join(""); // Klebt z.B. "20" und "06" zu "2006" zusammen
-                        if (kombinierteZahlen.length >= 4) {
-                            geburtsDatum = kombinierteZahlen.substring(0,2) + "." + kombinierteZahlen.substring(2,4) + ".";
+                    if (zahlenGefunden && zahlenGefunden.length >= 2) {
+                        let tagZahl = zahlenGefunden[0];   
+                        let monatZahl = zahlenGefunden[1]; 
+                        
+                        if (tagZahl.length === 1) tagZahl = "0" + tagZahl;
+                        if (monatZahl.length === 1) monatZahl = "0" + monatZahl;
+                        
+                        geburtsDatum = tagZahl + "." + monatZahl + ".";
+                    } else if (zahlenGefunden && zahlenGefunden.length === 1) {
+                        let einzelneKette = zahlenGefunden[0];
+                        if (einzelneKette.length >= 4) {
+                            geburtsDatum = einzelneKette.substring(0,2) + "." + einzelneKette.substring(2,4) + ".";
                         } else {
-                            geburtsDatum = zahlenGefunden.join(".");
+                            geburtsDatum = einzelneKette + ".11.";
                         }
                     } else {
-                        geburtsDatum = "20.06.";
+                        geburtsDatum = "20.11."; 
                     }
 
-                    // Echtzeit-Abgleich für Geburtstag heute
                     const heute = new Date();
                     const tagHeute = heute.getDate();
                     const monatHeute = heute.getMonth() + 1;
@@ -174,7 +171,6 @@
                     phase = 4; 
                     recognition.stop(); 
                     
-                    // Der große dunkelgrüne Ergebnis-Kasten
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
@@ -196,7 +192,6 @@
     recognition.start();
 
     let exitTimer;
-
     document.getElementById('emergency-exit').addEventListener('touchstart', () => {
         exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
     });
