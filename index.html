@@ -100,7 +100,7 @@
             }
         }
 
-        // PHASE 2: WERT RECHNEN (Fehler "Pattern" restlos entfernt!)
+        // PHASE 2: WERT RECHNEN
         if (phase === 2) {
             let jetzt = Date.now();
             
@@ -124,16 +124,18 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN
+        // PHASE 3: NAME & DATUM EXTRAHIEREN (Absolut repariert!)
         if (phase === 3) {
+            // Namen sicher als reinen Text abgreifen
             if (zuschauerName === "" && text.length > 2) {
                 let ersteWorte = text.split(" ");
-                zuschauerName = ersteWorte[0];
-                zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
-                zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
-                logToConsole("-> NAME POL_LOGGED: " + zuschauerName);
+                let roherNameText = ersteWorte[0] || "";
+                roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
+                zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
+                logToConsole("-> NAME LOGGED: " + zuschauerName);
             }
 
+            // Zahlen für das Datum filtern
             let zahlen = text.match(/\d+/g);
             if (zahlen && zahlen.length >= 1) {
                 let roheZahl = zahlen.join("");
@@ -144,6 +146,7 @@
                 }
             }
 
+            // Stoppwort-Raster für jede Variante von "verdeckt"
             if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
                 try {
                     if (geburtsDatum === "") geburtsDatum = "20.06."; 
@@ -160,6 +163,7 @@
                     phase = 4; 
                     recognition.stop(); 
                     
+                    // Der große dunkelgrüne Ergebnis-Kasten springt an!
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
