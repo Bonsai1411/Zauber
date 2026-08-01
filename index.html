@@ -100,7 +100,7 @@
             }
         }
 
-        // PHASE 2: WERT RECHNEN (Hier wurde das fehlerhafte Wort "Pattern" korrigiert!)
+        // PHASE 2: WERT RECHNEN (Hier wurde der Fehler "Pattern" restlos beseitigt!)
         if (phase === 2) {
             let jetzt = Date.now();
             
@@ -126,10 +126,10 @@
 
         // PHASE 3: NAME & DATUM EXTRAHIEREN
         if (phase === 3) {
-            // Namen sicher als reinen Text abgreifen
+            // Namen sicher als Text speichern
             if (zuschauerName === "" && text.length > 2) {
                 let ersteWorte = text.split(" ");
-                let roherNameText = ersteWorte[0] || "";
+                let roherNameText = ersteWorte || "Daniel";
                 roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
                 zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
                 logToConsole("-> NAME LOGGED: " + zuschauerName);
