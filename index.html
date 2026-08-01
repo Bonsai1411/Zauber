@@ -13,7 +13,6 @@
         #emergency-exit { position: fixed; top: 0; left: 0; width: 20%; height: 20%; z-index: 9999; }
         #debug-trigger { position: fixed; top: 0; right: 0; width: 20%; height: 20%; z-index: 9999; }
         
-        /* Das erweiterte Kontrollfenster für Ihren Test */
         #debug-console {
             display: none; position: fixed; bottom: 10px; left: 10px; right: 10px;
             height: 50%; background: #111; color: #aaa; font-family: monospace;
@@ -26,7 +25,6 @@
     <div id="emergency-exit"></div>
     <div id="debug-trigger"></div>
 
-    <!-- Nur das Kontrollfenster existiert, kein Zuschauer-Bildschirm mehr -->
     <div id="debug-console">--- SYSTEM FÜR TEST BEREIT ---<br>Warte auf Sprache...</div>
 
 <script>
@@ -45,7 +43,6 @@
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
     }
 
-    // Oben rechts 2 Sekunden halten öffnet/schließt das Log
     let debugTimer;
     document.getElementById('debug-trigger').addEventListener('touchstart', () => {
         debugTimer = setTimeout(() => {
@@ -66,17 +63,18 @@
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
-        let kompletterText = "";
-        for (let i = 0; i < event.results.length; ++i) {
-            if (event.results[i] && event.results[i]) {
-                kompletterText += event.results[i].transcript;
-            }
+        // DER ABSOLUT SICHERE TEXT-ABGRIFF (Ohne Schleifen-Risiko!)
+        let text = "";
+        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex][0]) {
+            text = event.results[event.resultIndex][0].transcript.toLowerCase().trim();
         }
-        let text = kompletterText.toLowerCase().trim();
+
+        if (!text) return; // Wenn der Text leer ist, abbrechen
 
         // Ihre Live-Übersicht im Test-Fenster
-        consoleDiv.innerHTML = "<b>Gehört (Gesamt):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
+        consoleDiv.innerHTML = "<b>Gehört (Live):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
 
+        // PHASE 0: STARTAUSLÖSER
         if (phase === 0 && (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen"))) {
             phase = 1;
             logToConsole("-> STARTAUSLÖSER ERKANNT! Phase 1 aktiv.");
@@ -85,6 +83,7 @@
             return;
         }
 
+        // PHASE 1: KARTENFARBE
         if (phase === 1) {
             let farbeGefunden = false;
             if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
@@ -101,6 +100,7 @@
             }
         }
 
+        // PHASE 2: WERT RECHNEN
         if (phase === 2) {
             let jetzt = Date.now();
             
@@ -108,7 +108,7 @@
             if (text.includes("zweimal") && (jetzt - sperreWorte.zweimal > 10000)) { kartenWert += 2; logToConsole("+2 (zweimal)"); sperreWorte.zweimal = jetzt; }
             if (text.includes("dreimal") && (jetzt - sperreWorte.dreimal > 10000)) { kartenWert += 3; logToConsole("+3 (dreimal)"); sperreWorte.dreimal = jetzt; }
             if (text.includes("viermal") && (jetzt - sperreWorte.viermal > 10000)) { kartenWert += 4; logToConsole("+4 (viermal)"); sperreWorte.viermal = jetzt; }
-            if (text.includes("hand") && (jetzt - sperreWorte.hand > 10000))   { kartenWert += 5; logToConsole("+5 (hand)"); sperreWorte.hand = hetzt; }
+            if (text.includes("hand") && (jetzt - sperreWorte.hand > 10000))   { kartenWert += 5; logToConsole("+5 (hand)"); sperreWorte.hand = jetzt; }
             if (text.includes("händen") && (jetzt - sperreWorte.händen > 10000)) { kartenWert += 10; logToConsole("+10 (händen)"); sperreWorte.händen = jetzt; }
 
             if (text.includes("reihenfolge")) {
@@ -124,17 +124,24 @@
             return;
         }
 
+        // PHASE 3: NAME & DATUM EXTRAHIEREN (Die unkaputtbare Version!)
         if (phase === 3 && text.includes("dein datum war der")) {
             try {
-                const teile = text.split("dein datum war der");
-                const vorDein = teile.trim();
-                const nameListe = vorDein.split(" ");
-                zuschauerName = nameListe[nameListe.length - 1]; 
+                // Trennt den Satz exakt am Schlüsselwort auf
+                let teile = text.split("dein datum war der");
                 
+                // Holt den Namen (das letzte Wort vor dem Cut) und befreit es von Android-Wiederholungen
+                let vorDein = teile[0].trim();
+                let nameListe = vorDein.split(" ");
+                let roherName = nameListe[nameListe.length - 1];
+                
+                // Genialer Filter: Macht aus "danieldanieldaniel" einfach ein sauberes "Daniel"
+                zuschauerName = roherName.replace(/(.+)\1+/g, "$1"); 
+
                 if (text.includes("also")) {
-                    const nachWarDer = teile.trim();
-                    const datumsTeile = nachWarDer.split("also");
-                    geburtsDatum = datumsTeile.trim();
+                    let nachWarDer = teile[1].trim();
+                    let datumsTeile = nachWarDer.split("also");
+                    geburtsDatum = datumsTeile[0].trim();
                     
                     // Live-Überprüfung des Geburtstags für das Testfenster
                     const heute = new Date();
@@ -148,11 +155,10 @@
                     logToConsole("Name: " + zuschauerName + " | Datum: " + geburtsDatum + " | Geburtstag: " + istGeburtstag);
                     
                     recognition.stop(); // Mikrofon aus
-                    phase = 4; // Ende des Tricks – Handy bleibt unendlich schwarz
+                    phase = 4; // Trick beendet
                 }
-            } catch(e) { 
-                zuschauerName = "Fehler"; 
-                geburtsDatum = "Fehler";
+            } catch(e) {
+                // Passiert nichts, falls Android mitten im Satz unterbricht
             }
             return;
         }
