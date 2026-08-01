@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mystery</title>
+    <title>Mystery Log</title>
     <style>
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -11,7 +11,15 @@
             overflow: hidden; touch-action: none; user-select: none;
         }
         #emergency-exit { position: fixed; top: 0; left: 0; width: 20%; height: 20%; z-index: 9999; }
+        #debug-trigger { position: fixed; top: 0; right: 0; width: 20%; height: 20%; z-index: 9999; }
         
+        /* Das geheime Kontrollfenster (Standardmäßig unsichtbar) */
+        #debug-console {
+            display: none; position: fixed; bottom: 10px; left: 10px; right: 10px;
+            height: 40%; background: #111; color: #888; font-family: monospace;
+            font-size: 14px; padding: 10px; overflow-y: auto; border: 1px solid #333; z-index: 6000;
+        }
+
         #reveal-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000000; color: white; font-family: 'Georgia', serif;
@@ -24,7 +32,12 @@
 </head>
 <body>
 
+    <!-- Touch-Zonen -->
     <div id="emergency-exit"></div>
+    <div id="debug-trigger"></div>
+
+    <!-- Das geheime Kontrollfenster -->
+    <div id="debug-console">--- KONTROLLFENSTER BEREIT ---<br>Warte auf Sprache...</div>
 
     <div id="reveal-screen">
         <div id="prediction-text"></div>
@@ -38,6 +51,26 @@
     let zuschauerName = "";
     let geburtsDatum = "";
 
+    const consoleDiv = document.getElementById("debug-console");
+
+    function logToConsole(msg) {
+        consoleDiv.innerHTML += "<br>" + msg;
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    // GEHEIMER AUSLÖSER FÜR DAS KONTROLLFENSTER (Oben rechts 2 Sekunden halten)
+    let debugTimer;
+    document.getElementById('debug-trigger').addEventListener('touchstart', () => {
+        debugTimer = setTimeout(() => {
+            consoleDiv.style.display = consoleDiv.style.display === "block" ? "none" : "block";
+            logToConsole("--- MANUELLER LOG-AUFRUF ---");
+            logToConsole("Aktuelle Phase: " + phase);
+            logToConsole("Eingeloggte Farbe: " + kartenFarbe);
+            logToConsole("Aktueller Wert: " + kartenWert);
+        }, 2000);
+    });
+    document.getElementById('debug-trigger').addEventListener('touchend', () => { clearTimeout(debugTimer); });
+
     // VOLLBILD ERZWINGEN BEIM ERSTEN TIPPEN
     document.documentElement.addEventListener('click', () => {
         if (document.documentElement.requestFullscreen) {
@@ -47,7 +80,7 @@
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = true;
-    recognition.interimResults = true; // Sucht im Millisekundentakt live
+    recognition.interimResults = true; 
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
@@ -55,13 +88,16 @@
         for (let i = event.resultIndex; i < event.results.length; ++i) {
             text += event.results[i].transcript;
         }
-        text = text.toLowerCase();
+        text = text.toLowerCase().trim();
+
+        // Zeige im Kontrollfenster LIVE an, was das Handy hört
+        consoleDiv.innerHTML = "<b>Gehört:</b> " + text + "<br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert;
 
         // PHASE 0: STARTAUSLÖSER
-        if (phase === 0 && (text.includes("nochmal zusammen") || text.includes("noch mal zusammen"))) {
+        if (phase === 0 && (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen"))) {
             phase = 1;
+            logToConsole("-> STARTAUSLÖSER ERKANNT! Schalte auf Phase 1.");
             
-            // BLITZ 1 (Start)
             document.body.style.backgroundColor = "#555555"; 
             setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 150);
             return;
@@ -77,7 +113,8 @@
 
             if (farbeGefunden) {
                 phase = 2;
-                // BLITZ 2 (Farbe steht)
+                logToConsole("-> FARBE ERKANNT: " + kartenFarbe + ". Schalte auf Phase 2.");
+                
                 document.body.style.backgroundColor = "#555555";
                 setTimeout(() => { document.body.style.backgroundColor = "#000000"; setTimeout(() => { document.body.style.backgroundColor = "#555555"; setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 100); }, 100); }, 100);
                 return;
@@ -86,16 +123,18 @@
 
         // PHASE 2: WERT RECHNEN
         if (phase === 2) {
-            if (text.includes("einmal")) { kartenWert += 1; }
-            if (text.includes("zweimal")) { kartenWert += 2; }
-            if (text.includes("dreimal")) { kartenWert += 3; }
-            if (text.includes("viermal")) { kartenWert += 4; }
-            if (text.includes("hand"))   { kartenWert += 5; }
-            if (text.includes("händen")) { kartenWert += 10; }
+            let wertGeaendert = false;
+            if (text.includes("einmal")) { kartenWert += 1; wertGeaendert = true; logToConsole("+1 (einmal)"); }
+            if (text.includes("zweimal")) { kartenWert += 2; wertGeaendert = true; logToConsole("+2 (zweimal)"); }
+            if (text.includes("dreimal")) { kartenWert += 3; wertGeaendert = true; logToConsole("+3 (dreimal)"); }
+            if (text.includes("viermal")) { kartenWert += 4; wertGeaendert = true; logToConsole("+4 (viermal)"); }
+            if (text.includes("hand"))   { kartenWert += 5; wertGeaendert = true; logToConsole("+5 (hand)"); }
+            if (text.includes("händen")) { kartenWert += 10; wertGeaendert = true; logToConsole("+10 (händen)"); }
 
             if (text.includes("reihenfolge")) {
                 phase = 3;
-                // BLITZ 3 (Wert steht)
+                logToConsole("-> WERT BEENDET. Gesamtwert: " + kartenWert + ". Schalte auf Phase 3.");
+                
                 let blitzCount = 0;
                 let blitzInterval = setInterval(() => {
                     document.body.style.backgroundColor = document.body.style.backgroundColor === "rgb(0, 0, 0)" ? "#555555" : "#000000";
@@ -108,7 +147,6 @@
 
         // PHASE 3: NAME & DATUM
         if (phase === 3 && text.includes("dein datum war der")) {
-            // Holt den Namen (Wort vor "dein")
             try {
                 const vorDein = text.split("dein datum war der")[0].trim();
                 const nameListe = vorDein.split(" ");
@@ -116,18 +154,14 @@
             } catch(e) { zuschauerName = "Zuschauer"; }
             
             if (text.includes("also")) {
-                // Holt das Datum (alles zwischen "war der" und "also")
                 try {
                     const nachWarDer = text.split("dein datum war der")[1];
                     geburtsDatum = nachWarDer.split("also")[0].trim();
                 } catch(e) { geburtsDatum = "heute"; }
                 
+                logToConsole("-> FINALE: Name=" + zuschauerName + " | Datum=" + geburtsDatum);
                 recognition.stop(); 
-                phase = 4; // Bereit für Zuschauer-Touch
-                
-                // BLITZ 4 (Abschluss)
-                document.body.style.backgroundColor = "#222222";
-                setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 100);
+                phase = 4;
             }
             return;
         }
@@ -136,10 +170,10 @@
     recognition.onend = () => { if (phase < 4) recognition.start(); };
     recognition.start();
 
-    // FINALE AKTIVIERUNG DURCH DEN ZUSCHAUER
     document.body.addEventListener('click', () => {
         if (phase === 4) {
             phase = 5;
+            consoleDiv.style.display = "none"; // Schließt das Log vor der Show
             starteMagischeEnthuellung();
         }
     });
