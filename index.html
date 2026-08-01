@@ -63,11 +63,11 @@ html<!DOCTYPE html>
         }
         text = text.toLowerCase();
 
- // PHASE 0: STARTAUSLÖSER (Sucht im Text nach "zusammen")
-        if (phase === 0 && text.indexOf("zusammen") !== -1) {
-            phase = 1;
+ // PHASE 0: STARTAUSLÖSER (Sucht im Text nach der Kombination "nochmal zusammen")
+        if (phase === 0 && text.indexOf("nochmal zusammen") !== -1) {
+            phase = 1; // Schaltet um auf Phase 1 (Kartenfarbe)
             
-            // LAUTLOSER LICHTBLITZ (Bildschirm blitzt kurz auf für 150 Millisekunden)
+            // LAUTLOSER LICHTBLITZ (Beweis für Sie, dass die Kombination erkannt wurde)
             document.body.style.backgroundColor = "#555555"; 
             setTimeout(() => {
                 document.body.style.backgroundColor = "#000000"; // Sofort wieder OLED-Schwarz
