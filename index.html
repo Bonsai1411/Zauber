@@ -41,7 +41,6 @@
     function logToConsole(msg) {
         consoleDiv.innerHTML += "<br><span style='color:#00ff00'>" + msg + "</span>";
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
-        console.log(msg); // Druckt es zusätzlich in die F12-Laptop-Konsole!
     }
 
     let debugTimer;
@@ -64,17 +63,18 @@
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
-        // DIE UNKAPUTTBARE GOOGLE-STANDARD-FORMEL: Holt den Text absolut crash-sicher ab!
-        let text = "";
-        if (event.results && event.results[event.resultIndex] && event.results[event.resultIndex][0]) {
-            text = event.results[event.resultIndex][0].transcript.toLowerCase().trim();
+        let kompletterText = "";
+        for (let i = 0; i < event.results.length; ++i) {
+            if (event.results[i] && event.results[i]) {
+                kompletterText += event.results[i].transcript;
+            }
         }
+        let text = kompletterText.toLowerCase().trim();
 
         if (!text) return;
 
         if (phase < 4) {
             consoleDiv.innerHTML = "<b>Gehört (Live):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
-            console.log("Gehört: " + text); // Live-Vorschau in F12
         }
 
         // PHASE 0: STARTAUSLÖSER
@@ -127,30 +127,41 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN
+        // PHASE 3: NAME & DATUM EXTRAHIEREN (Meister-Zuweisung)
         if (phase === 3) {
-            if (zuschauerName === "" && text.length > 2) {
-                let ersteWorte = text.split(" ");
-                let roherNameText = ersteWorte[0] || "Daniel";
-                roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
-                zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
-                logToConsole("-> NAME LOGGED: " + zuschauerName);
-            }
-
-            let zahlen = text.match(/\d+/g);
-            if (zahlen && zahlen.length >= 1) {
-                let roheZahl = zahlen.join("");
-                if (roheZahl.length >= 4) {
-                    geburtsDatum = roheZahl.substring(0,2) + "." + roheZahl.substring(2,4) + ".";
-                } else {
-                    geburtsDatum = zahlen.join(".");
-                }
-            }
-
             if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
                 try {
-                    if (geburtsDatum === "") geburtsDatum = "20.06."; 
+                    let worte = text.split(" ");
+                    
+                    // 1. Namen messerscharf holen: Das Wort direkt VOR dem Begriff "dein" oder "datum"
+                    let datumIndex = worte.indexOf("datum");
+                    let deinIndex = worte.indexOf("dein");
+                    let targetIndex = datumIndex > 0 ? datumIndex : deinIndex;
+                    
+                    if (targetIndex > 0) {
+                        zuschauerName = worte[targetIndex - 1];
+                    } else {
+                        zuschauerName = "Daniel"; // Erprobter Standard-Wert
+                    }
+                    
+                    // Säubert eventuelle Android-Reste
+                    zuschauerName = zuschauerName.replace(/(.+)\1+/g, "$1");
+                    zuschauerName = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
 
+                    // 2. Datum messerscharf holen: Zieht alle Ziffern heraus
+                    let zahlenGefunden = text.match(/\d+/g);
+                    if (zahlenGefunden && zahlenGefunden.length >= 1) {
+                        let kombinierteZahlen = zahlenGefunden.join(""); // Klebt z.B. "20" und "06" zu "2006" zusammen
+                        if (kombinierteZahlen.length >= 4) {
+                            geburtsDatum = kombinierteZahlen.substring(0,2) + "." + kombinierteZahlen.substring(2,4) + ".";
+                        } else {
+                            geburtsDatum = zahlenGefunden.join(".");
+                        }
+                    } else {
+                        geburtsDatum = "20.06.";
+                    }
+
+                    // Echtzeit-Abgleich für Geburtstag heute
                     const heute = new Date();
                     const tagHeute = heute.getDate();
                     const monatHeute = heute.getMonth() + 1;
@@ -163,6 +174,7 @@
                     phase = 4; 
                     recognition.stop(); 
                     
+                    // Der große dunkelgrüne Ergebnis-Kasten
                     consoleDiv.style.backgroundColor = "#003300";
                     consoleDiv.style.color = "#ffffff";
                     consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
@@ -170,7 +182,7 @@
                                            "<p style='font-size: 16px;'><b>Erkannter Name:</b> " + zuschauerName + "</p>" +
                                            "<p style='font-size: 16px;'><b>Erkanntes Datum:</b> " + geburtsDatum + "</p>" +
                                            "<p style='font-size: 16px;'><b>Geburtstag heute:</b> " + istGeburtstag + "</p>" +
-                                           "<hr><small>Letzter Textbaustein: " + text + "</small>";
+                                           "<hr><small>Vollständiger Textverlauf: " + text + "</small>";
                     
                 } catch(e) {
                     logToConsole("Fehler beim Filtern: " + e.message);
@@ -184,10 +196,3 @@
     recognition.start();
 
     let exitTimer;
-    document.getElementById('emergency-exit').addEventListener('touchstart', () => {
-        exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
-    });
-    document.getElementById('emergency-exit').addEventListener('touchend', () => { clearTimeout(exitTimer); });
-</script>
-</body>
-</html>
