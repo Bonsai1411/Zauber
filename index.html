@@ -83,7 +83,7 @@
     recognition.interimResults = true; 
     recognition.lang = 'de-DE';
 
-     recognition.onresult = (event) => {
+ recognition.onresult = (event) => {
         // Die modernste Formel, um den Text fehlerfrei aus Android auszulesen:
         const resultIndex = event.resultIndex;
         const transcript = event.results[resultIndex][0].transcript;
@@ -92,8 +92,6 @@
         // Zeige im Kontrollfenster LIVE an, was das Handy hört
         consoleDiv.innerHTML = "<b>Gehört:</b> " + text + "<br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert;
 
-        // PHASE 0: STARTAUSLÖSER
-        if (phase === 0 && (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen"))) {
         // PHASE 0: STARTAUSLÖSER
         if (phase === 0 && (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen"))) {
             phase = 1;
