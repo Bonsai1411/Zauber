@@ -1,4 +1,4 @@
-html<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
@@ -20,7 +20,7 @@ html<!DOCTYPE html>
             z-index: 5000;
         }
         #prediction-text { font-size: 24px; margin-bottom: 30px; padding: 20px; transition: opacity 2s; }
-        #card-display { font-size: 40px; font-weight: bold; border: 3px solid white; padding: 40px 20px; border-radius: 10px; display: inline-block; min-width: 150px; }
+        #card-display { font-size: 40px; font-weight: bold; border: 3px solid white; padding: 40px 20px; border-radius: 10px; display: inline-block; min-width: 150px; opacity: 0; transition: opacity 2s; }
     </style>
 </head>
 <body>
@@ -34,79 +34,59 @@ html<!DOCTYPE html>
 
 <script>
     let phase = 0; 
-    let kartsFarbe = "";
+    let kartenFarbe = "";
     let kartenWert = 0;
     let zuschauerName = "";
     let geburtsDatum = "";
 
     // ZWINGT DEN BROWSER IN DEN VOLLBILDMODUS BEI BERÜHRUNG
     document.documentElement.addEventListener('click', () => {
-        // Blendet die Leisten oben und unten bei Samsung komplett aus!
         if (document.documentElement.requestFullscreen) {
             document.documentElement.requestFullscreen();
         }
-        
-        // EINMALIGES TEST-VIBRIEREN BEIM TIPPEN 
-        // So wissen Sie sofort, ob das Handy physikalisch vibrieren darf!
-        if (navigator.vibrate) navigator.vibrate(100);
     });
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = true;
-    recognition.interimResults = true; // JETZT AUCH LIVE-WORT-ERKENNUNG OHNE PAUSE!
+    recognition.interimResults = true; // Live-Erkennung im Millisekundentakt
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
         let text = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-            text += event.results[i][0].transcript;
+            text += event.results[i].transcript;
         }
         text = text.toLowerCase();
 
- // PHASE 0: STARTAUSLÖSER (Sucht im Text nach der Kombination "nochmal zusammen")
+        // PHASE 0: STARTAUSLÖSER (Sucht nach "nochmal zusammen")
         if (phase === 0 && text.indexOf("nochmal zusammen") !== -1) {
-            phase = 1; // Schaltet um auf Phase 1 (Kartenfarbe)
+            phase = 1;
             
-            // LAUTLOSER LICHTBLITZ (Beweis für Sie, dass die Kombination erkannt wurde)
+            // LAUTLOSER LICHTBLITZ (1 Blitz)
             document.body.style.backgroundColor = "#555555"; 
-            setTimeout(() => {
-                document.body.style.backgroundColor = "#000000"; // Sofort wieder OLED-Schwarz
-            }, 150);
-            
+            setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 150);
             return;
         }
 
         // PHASE 1: KARTENFARBE ERKENNEN
         if (phase === 1) {
             let farbeGefunden = false;
-            
             if (text.indexOf("passiert") !== -1) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
             else if (text.indexOf("geschehen") !== -1) { kartenFarbe = "Herz ♥"; farbeGefunden = true; }
             else if (text.indexOf("gewesen") !== -1) { kartenFarbe = "Kreuz ♣"; farbeGefunden = true; }
             else if (text.indexOf("gehabt") !== -1) { kartenFarbe = "Karo ♦"; farbeGefunden = true; }
 
             if (farbeGefunden) {
-                phase = 2; // Sofort umschalten auf Werterkennung!
-                
-                // LAUTLOSES DOPPEL-BLITZEN (Beweis für Sie: Farbe erkannt!)
+                phase = 2;
+                // LAUTLOSES DOPPEL-BLITZEN
                 document.body.style.backgroundColor = "#555555";
-                setTimeout(() => {
-                    document.body.style.backgroundColor = "#000000";
-                    setTimeout(() => {
-                        document.body.style.backgroundColor = "#555555";
-                        setTimeout(() => {
-                            document.body.style.backgroundColor = "#000000";
-                        }, 100);
-                    }, 100);
-                }, 100);
-                
+                setTimeout(() => { document.body.style.backgroundColor = "#000000"; setTimeout(() => { document.body.style.backgroundColor = "#555555"; setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 100); }, 100); }, 100);
                 return;
             }
         }
 
-        // PHASE 2: KARTENWERT RECHNEN (Addieren im Hintergrund)
+        // PHASE 2: KARTENWERT RECHNEN
         if (phase === 2) {
-            // Jedes Mal wenn ein Codewort fällt, addiert das System den Wert auf
             if (text.indexOf("einmal") !== -1) { kartenWert += 1; }
             if (text.indexOf("zweimal") !== -1) { kartenWert += 2; }
             if (text.indexOf("dreimal") !== -1) { kartenWert += 3; }
@@ -114,46 +94,48 @@ html<!DOCTYPE html>
             if (text.indexOf("hand") !== -1)   { kartenWert += 5; }
             if (text.indexOf("händen") !== -1) { kartenWert += 10; }
 
-            // Das Stopp-Wort beendet das Rechnen und loggt den Gesamtwert ein
             if (text.indexOf("reihenfolge") !== -1) {
-                phase = 3; // Weiter zu Name und Datum
-                
-                // LAUTLOSES DREIFACH-BLITZEN (Beweis für Sie: Wert ist fertig gerechnet!)
+                phase = 3;
+                // LAUTLOSES DREIFACH-BLITZEN
                 let blitzCount = 0;
                 let blitzInterval = setInterval(() => {
                     document.body.style.backgroundColor = document.body.style.backgroundColor === "rgb(0, 0, 0)" ? "#555555" : "#000000";
                     blitzCount++;
-                    if (blitzCount >= 6) clearInterval(blitzInterval); // 3-mal an und aus
+                    if (blitzCount >= 6) clearInterval(blitzInterval);
                 }, 80);
             }
             return;
-     
+        }
 
         // PHASE 3: NAME & DATUM EXTRAHIEREN
-        if (phase === 3 && text.includes("dein datum war der")) {
-            // Holt das Wort VOR "dein" als Namen
+        if (phase === 3 && text.indexOf("dein datum war der") !== -1) {
             const teile = text.split("dein datum war der");
             const worteVorher = teile[0].trim().split(" ");
-            zuschauerName = worteVorher[worteVorher.length - 1]; // Letztes Wort vor "dein"
+            zuschauerName = worteVorher[worteVorher.length - 1]; 
             
-            // Holt den Text nach "war der" bis zum Wort "also"
-            if (text.includes("also")) {
-                const datumsTeil = teile[1].split("also")[0].trim();
+            if (text.indexOf("also") !== -1) {
+                const textNachWarDer = teile[1].trim();
+                const datumsTeil = textNachWarDer.split("also")[0].trim();
                 geburtsDatum = datumsTeil;
                 
-                recognition.stop(); // Mikrofon aus, Berechnung fertig!
-                phase = 4; // Wartet jetzt nur noch auf den Touch des Zuschauers
+                recognition.stop(); 
+                phase = 4; // Wartet auf Zuschauer
+                
+                // EIN LETZTER SCHWACHER LICHTBLITZ (Erkennung abgeschlossen)
+                document.body.style.backgroundColor = "#222222";
+                setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 100);
             }
+            return;
         }
     };
 
-    // Verhindert das Aufhängen bei Stille
     recognition.onend = () => { if (phase < 4) recognition.start(); };
     recognition.start();
 
-    // DER ZUSCHAUER-STARTSCHUSS (Touch/Klopfen auf den schwarzen Bildschirm)
+    // DER STARTSCHUSS FÜR DEN ZUSCHAUER (Touch auf schwarzen Bildschirm)
     document.body.addEventListener('click', () => {
         if (phase === 4) {
+            phase = 5;
             starteMagischeEnthuellung();
         }
     });
@@ -163,48 +145,37 @@ html<!DOCTYPE html>
         const textFeld = document.getElementById("prediction-text");
         const kartenFeld = document.getElementById("card-display");
         
-        screen.style.display = "flex"; // Bildschirm einschalten
+        screen.style.display = "flex"; 
 
-        // PRÜFEN OB HEUTE GEBURTSTAG IST
+        // HEUTIGES DATUM FÜR GEBURTSTAGS-WEICHE ABGREIFEN
         const heute = new Date();
         const tagHeute = heute.getDate();
-        const monatHeute = heute.getMonth() + 1; // Januar ist 0
-        const datumStringHeute = tagHeute + "." + (monatHeute < 10 ? "0" + monatHeute : monatHeute);
+        const monatHeute = heute.getMonth() + 1;
+        const datumHeuteString = (tagHeute < 10 ? "0" + tagHeute : tagHeute) + "." + (monatHeute < 10 ? "0" + monatHeute : monatHeute);
 
-        // Name sauber formatieren (Erster Buchstabe groß)
         const nameFormatiert = zuschauerName.charAt(0).toUpperCase() + zuschauerName.slice(1);
 
-        // Wert in Text umwandeln für As, Bube, Dame, König
         let wertText = kartenWert;
-        if (kartenWert === 1) wertText = "Ass";
+        if (kartenWert === 1 || kartenWert === 14) wertText = "Ass";
         if (kartenWert === 11) wertText = "Bube";
         if (kartenWert === 12) wertText = "Dame";
         if (kartenWert === 13) wertText = "König";
 
-        // WEICHE: GEBURTSTAG ODER NORMALER TAG
-        if (geburtsDatum.includes(datumStringHeute)) {
+        if (geburtsDatum.includes(datumHeuteString) || datumHeuteString.includes(geburtsDatum)) {
             textFeld.innerText = nameFormatiert + ", heute ist dein GEBURTSTAG! Du hättest an jedem Tag des Jahres hier sein können... aber das Schicksal wollte es genau heute.";
         } else {
             textFeld.innerText = nameFormatiert + ", du wirst als Datum den " + geburtsDatum + " nennen.";
         }
 
-        // Nach 5 Sekunden verblasst der Text und die Spielkarte erscheint aus dem Nichts
         setTimeout(() => {
             textFeld.style.opacity = "0";
             setTimeout(() => {
                 textFeld.style.display = "none";
                 kartenFeld.innerText = kartenFarbe + "\n" + wertText;
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Magisches Dreifach-Vibrieren beim Erscheinen
+                kartenFeld.style.opacity = "1";
             }, 2000);
         }, 5000);
     }
-
-    // NOTAUSSTIEG (3 Sekunden oben links halten)
-    let exitTimer;
-    document.getElementById('emergency-exit').addEventListener('touchstart', () => {
-        exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
-    });
-    document.getElementById('emergency-exit').addEventListener('touchend', () => { clearTimeout(exitTimer); });
 </script>
 </body>
 </html>
