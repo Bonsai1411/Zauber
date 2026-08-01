@@ -76,29 +76,58 @@ html<!DOCTYPE html>
             return;
         }
 
-        // PHASE 1: KARTENFARBE
+        // PHASE 1: KARTENFARBE ERKENNEN
         if (phase === 1) {
-            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; phase = 2; }
-            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; phase = 2; }
-            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; phase = 2; }
-            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; phase = 2; }
-            return;
+            let farbeGefunden = false;
+            
+            if (text.indexOf("passiert") !== -1) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
+            else if (text.indexOf("geschehen") !== -1) { kartenFarbe = "Herz ♥"; farbeGefunden = true; }
+            else if (text.indexOf("gewesen") !== -1) { kartenFarbe = "Kreuz ♣"; farbeGefunden = true; }
+            else if (text.indexOf("gehabt") !== -1) { kartenFarbe = "Karo ♦"; farbeGefunden = true; }
+
+            if (farbeGefunden) {
+                phase = 2; // Sofort umschalten auf Werterkennung!
+                
+                // LAUTLOSES DOPPEL-BLITZEN (Beweis für Sie: Farbe erkannt!)
+                document.body.style.backgroundColor = "#555555";
+                setTimeout(() => {
+                    document.body.style.backgroundColor = "#000000";
+                    setTimeout(() => {
+                        document.body.style.backgroundColor = "#555555";
+                        setTimeout(() => {
+                            document.body.style.backgroundColor = "#000000";
+                        }, 100);
+                    }, 100);
+                }, 100);
+                
+                return;
+            }
         }
 
-        // PHASE 2: KARTENWERT RECHNEN (Addieren)
+        // PHASE 2: KARTENWERT RECHNEN (Addieren im Hintergrund)
         if (phase === 2) {
-            if (text.includes("einmal")) kartenWert += 1;
-            if (text.includes("zweimal")) kartenWert += 2;
-            if (text.includes("dreimal")) kartenWert += 3;
-            if (text.includes("viermal")) kartenWert += 4;
-            if (text.includes("hand")) kartenWert += 5;
-            if (text.includes("händen")) kartenWert += 10;
+            // Jedes Mal wenn ein Codewort fällt, addiert das System den Wert auf
+            if (text.indexOf("einmal") !== -1) { kartenWert += 1; }
+            if (text.indexOf("zweimal") !== -1) { kartenWert += 2; }
+            if (text.indexOf("dreimal") !== -1) { kartenWert += 3; }
+            if (text.indexOf("viermal") !== -1) { kartenWert += 4; }
+            if (text.indexOf("hand") !== -1)   { kartenWert += 5; }
+            if (text.indexOf("händen") !== -1) { kartenWert += 10; }
 
-            if (text.includes("reihenfolge")) {
-                phase = 3; // Rechnen beendet
+            // Das Stopp-Wort beendet das Rechnen und loggt den Gesamtwert ein
+            if (text.indexOf("reihenfolge") !== -1) {
+                phase = 3; // Weiter zu Name und Datum
+                
+                // LAUTLOSES DREIFACH-BLITZEN (Beweis für Sie: Wert ist fertig gerechnet!)
+                let blitzCount = 0;
+                let blitzInterval = setInterval(() => {
+                    document.body.style.backgroundColor = document.body.style.backgroundColor === "rgb(0, 0, 0)" ? "#555555" : "#000000";
+                    blitzCount++;
+                    if (blitzCount >= 6) clearInterval(blitzInterval); // 3-mal an und aus
+                }, 80);
             }
             return;
-        }
+     
 
         // PHASE 3: NAME & DATUM EXTRAHIEREN
         if (phase === 3 && text.includes("dein datum war der")) {
