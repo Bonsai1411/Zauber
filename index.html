@@ -12,7 +12,6 @@
         }
         #emergency-exit { position: fixed; top: 0; left: 0; width: 20%; height: 20%; z-index: 9999; }
         
-        /* Der magische Enthüllungs-Bildschirm */
         #reveal-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000000; color: white; font-family: 'Georgia', serif;
@@ -39,7 +38,7 @@
     let zuschauerName = "";
     let geburtsDatum = "";
 
-    // ZWINGT DEN BROWSER IN DEN VOLLBILDMODUS BEI BERÜHRUNG
+    // VOLLBILD ERZWINGEN BEIM ERSTEN TIPPEN
     document.documentElement.addEventListener('click', () => {
         if (document.documentElement.requestFullscreen) {
             document.documentElement.requestFullscreen();
@@ -48,7 +47,7 @@
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = true;
-    recognition.interimResults = true; // Live-Erkennung im Millisekundentakt
+    recognition.interimResults = true; // Sucht im Millisekundentakt live
     recognition.lang = 'de-DE';
 
     recognition.onresult = (event) => {
@@ -58,45 +57,45 @@
         }
         text = text.toLowerCase();
 
-        // PHASE 0: STARTAUSLÖSER (Sucht nach "nochmal zusammen")
-        if (phase === 0 && text.indexOf("nochmal zusammen") !== -1) {
+        // PHASE 0: STARTAUSLÖSER
+        if (phase === 0 && (text.includes("nochmal zusammen") || text.includes("noch mal zusammen"))) {
             phase = 1;
             
-            // LAUTLOSER LICHTBLITZ (1 Blitz)
+            // BLITZ 1 (Start)
             document.body.style.backgroundColor = "#555555"; 
             setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 150);
             return;
         }
 
-        // PHASE 1: KARTENFARBE ERKENNEN
+        // PHASE 1: KARTENFARBE
         if (phase === 1) {
             let farbeGefunden = false;
-            if (text.indexOf("passiert") !== -1) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
-            else if (text.indexOf("geschehen") !== -1) { kartenFarbe = "Herz ♥"; farbeGefunden = true; }
-            else if (text.indexOf("gewesen") !== -1) { kartenFarbe = "Kreuz ♣"; farbeGefunden = true; }
-            else if (text.indexOf("gehabt") !== -1) { kartenFarbe = "Karo ♦"; farbeGefunden = true; }
+            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
+            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; farbeGefunden = true; }
+            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; farbeGefunden = true; }
+            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; farbeGefunden = true; }
 
             if (farbeGefunden) {
                 phase = 2;
-                // LAUTLOSES DOPPEL-BLITZEN
+                // BLITZ 2 (Farbe steht)
                 document.body.style.backgroundColor = "#555555";
                 setTimeout(() => { document.body.style.backgroundColor = "#000000"; setTimeout(() => { document.body.style.backgroundColor = "#555555"; setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 100); }, 100); }, 100);
                 return;
             }
         }
 
-        // PHASE 2: KARTENWERT RECHNEN
+        // PHASE 2: WERT RECHNEN
         if (phase === 2) {
-            if (text.indexOf("einmal") !== -1) { kartenWert += 1; }
-            if (text.indexOf("zweimal") !== -1) { kartenWert += 2; }
-            if (text.indexOf("dreimal") !== -1) { kartenWert += 3; }
-            if (text.indexOf("viermal") !== -1) { kartenWert += 4; }
-            if (text.indexOf("hand") !== -1)   { kartenWert += 5; }
-            if (text.indexOf("händen") !== -1) { kartenWert += 10; }
+            if (text.includes("einmal")) { kartenWert += 1; }
+            if (text.includes("zweimal")) { kartenWert += 2; }
+            if (text.includes("dreimal")) { kartenWert += 3; }
+            if (text.includes("viermal")) { kartenWert += 4; }
+            if (text.includes("hand"))   { kartenWert += 5; }
+            if (text.includes("händen")) { kartenWert += 10; }
 
-            if (text.indexOf("reihenfolge") !== -1) {
+            if (text.includes("reihenfolge")) {
                 phase = 3;
-                // LAUTLOSES DREIFACH-BLITZEN
+                // BLITZ 3 (Wert steht)
                 let blitzCount = 0;
                 let blitzInterval = setInterval(() => {
                     document.body.style.backgroundColor = document.body.style.backgroundColor === "rgb(0, 0, 0)" ? "#555555" : "#000000";
@@ -107,21 +106,26 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN
-        if (phase === 3 && text.indexOf("dein datum war der") !== -1) {
-            const teile = text.split("dein datum war der");
-            const worteVorher = teile[0].trim().split(" ");
-            zuschauerName = worteVorher[worteVorher.length - 1]; 
+        // PHASE 3: NAME & DATUM
+        if (phase === 3 && text.includes("dein datum war der")) {
+            // Holt den Namen (Wort vor "dein")
+            try {
+                const vorDein = text.split("dein datum war der")[0].trim();
+                const nameListe = vorDein.split(" ");
+                zuschauerName = nameListe[nameListe.length - 1];
+            } catch(e) { zuschauerName = "Zuschauer"; }
             
-            if (text.indexOf("also") !== -1) {
-                const textNachWarDer = teile[1].trim();
-                const datumsTeil = textNachWarDer.split("also")[0].trim();
-                geburtsDatum = datumsTeil;
+            if (text.includes("also")) {
+                // Holt das Datum (alles zwischen "war der" und "also")
+                try {
+                    const nachWarDer = text.split("dein datum war der")[1];
+                    geburtsDatum = nachWarDer.split("also")[0].trim();
+                } catch(e) { geburtsDatum = "heute"; }
                 
                 recognition.stop(); 
-                phase = 4; // Wartet auf Zuschauer
+                phase = 4; // Bereit für Zuschauer-Touch
                 
-                // EIN LETZTER SCHWACHER LICHTBLITZ (Erkennung abgeschlossen)
+                // BLITZ 4 (Abschluss)
                 document.body.style.backgroundColor = "#222222";
                 setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 100);
             }
@@ -132,7 +136,7 @@
     recognition.onend = () => { if (phase < 4) recognition.start(); };
     recognition.start();
 
-    // DER STARTSCHUSS FÜR DEN ZUSCHAUER (Touch auf schwarzen Bildschirm)
+    // FINALE AKTIVIERUNG DURCH DEN ZUSCHAUER
     document.body.addEventListener('click', () => {
         if (phase === 4) {
             phase = 5;
@@ -147,7 +151,6 @@
         
         screen.style.display = "flex"; 
 
-        // HEUTIGES DATUM FÜR GEBURTSTAGS-WEICHE ABGREIFEN
         const heute = new Date();
         const tagHeute = heute.getDate();
         const monatHeute = heute.getMonth() + 1;
