@@ -184,8 +184,15 @@
         }
     };
 
-    recognition.onend = () => { if (phase < 4) recognition.start(); };
-    recognition.start();
+       // Startet das Mikrofon beim Laden und startet es JEDES MAL neu, wenn Sie auf den Bildschirm tippen!
+    recognition.onend = () => { if (phase < 4) { try { recognition.start(); } catch(e){} } };
+    try { recognition.start(); } catch(e){}
+    
+    document.documentElement.addEventListener('click', () => {
+        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        if (phase < 4) { try { recognition.start(); } catch(e){} } // ZWINGT das Mikrofon anzuspringen!
+    });
+
 
     let exitTimer;
     document.getElementById('emergency-exit').addEventListener('touchstart', () => {
