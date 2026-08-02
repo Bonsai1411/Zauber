@@ -2,23 +2,28 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
     <title>Mystery Master Log</title>
     <style>
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #000000; color: #000000;
+            background-color: #050505; color: #222222; /* Extrem gedimmtes Grund-Design */
             overflow: hidden; touch-action: none; user-select: none;
         }
-        /* Die geheimen Touch-Bereiche für das Handy */
         #emergency-exit { position: fixed; top: 0; left: 0; width: 25%; height: 25%; z-index: 99999; }
         #debug-trigger { position: fixed; top: 0; right: 0; width: 25%; height: 25%; z-index: 99999; background: transparent; }
         
-        /* Am Laptop ist das Fenster jetzt direkt von Anfang an offen (display: block) */
+        /* Das gedimmte Kontrollfenster - schimmert ganz schwach in Dunkelgrau/Dunkelgrün */
         #debug-console {
             display: block; position: fixed; bottom: 10px; left: 10px; right: 10px;
-            height: 55%; background: #111; color: #aaa; font-family: monospace;
-            font-size: 13px; padding: 10px; overflow-y: auto; border: 1px solid #333; z-index: 99999;
+            height: 55%; background: #0a0a0a; color: #444444; font-family: monospace;
+            font-size: 13px; padding: 10px; overflow-y: auto; border: 1px solid #1a1a1a; z-index: 99999;
+        }
+        
+        /* DIE DIGITALE TARNKAPPE: Legt sich über alles und schluckt 99.5% des Lichts */
+        #tarnkappe {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000000; opacity: 0.995; pointer-events: none; z-index: 88888;
         }
     </style>
 </head>
@@ -26,8 +31,9 @@
 
     <div id="emergency-exit"></div>
     <div id="debug-trigger"></div>
+    <div id="tarnkappe"></div> <!-- Schluckt das Licht live auf dem Display -->
 
-    <div id="debug-console">--- SYSTEM BEREIT ---<br>Handy: Tippe oben rechts zum Verstecken | Warte auf Sprache...</div>
+    <div id="debug-console">--- DIGITALE DIMMUNG AKTIV ---<br>Warte auf Sprache...</div>
 
 <script>
     let phase = 0; 
@@ -45,21 +51,13 @@
     }
 
     function logToConsole(msg) {
-        consoleDiv.innerHTML += "<br><span style='color:#00ff00'>" + msg + "</span>";
+        consoleDiv.innerHTML += "<br><span style='color:#116611'>" + msg + "</span>"; // Gedimmtes Grün
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
     }
 
-    // UNKAPUTTBARES TOUCH-EVENT FÜR DAS HANDY (Reagiert sofort beim Berühren!)
     document.getElementById('debug-trigger').addEventListener('touchstart', (e) => { 
-        e.preventDefault(); // Stoppt den Vollbild-Klick-Konflikt eiskalt!
+        e.preventDefault(); 
         umschalteLog(); 
-    });
-
-    // Für den Laptop-Test (Taste 'D' funktioniert weiterhin)
-    window.addEventListener('keydown', (e) => { if (e.key === 'd' || e.key === 'D') umschalteLog(); });
-
-    document.documentElement.addEventListener('click', () => {
-        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
     });
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -86,8 +84,6 @@
             if (phase === 0) {
                 phase = 1;
                 logToConsole("-> STARTAUSLÖSER ERKANNT! Phase 1 aktiv.");
-                document.body.style.backgroundColor = "#555555"; 
-                setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 150);
                 return;
             }
         }
@@ -103,8 +99,6 @@
             if (farbeGefunden) {
                 phase = 2;
                 logToConsole("-> FARBE ERKANNT: " + kartenFarbe + ". Phase 2 aktiv.");
-                document.body.style.backgroundColor = "#555555";
-                setTimeout(() => { document.body.style.backgroundColor = "#000000"; setTimeout(() => { document.body.style.backgroundColor = "#555555"; setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 100); }, 100); }, 100);
                 return;
             }
         }
@@ -122,12 +116,6 @@
             if (text.includes("reihenfolge")) {
                 phase = 3;
                 logToConsole("-> WERT FERTIG: " + kartenWert + ". Phase 3 aktiv.");
-                let blitzCount = 0;
-                let blitzInterval = setInterval(() => {
-                    document.body.style.backgroundColor = document.body.style.backgroundColor === "rgb(0, 0, 0)" ? "#555555" : "#000000";
-                    blitzCount++;
-                    if (blitzCount >= 6) clearInterval(blitzInterval);
-                }, 80);
             }
             return;
         }
@@ -135,15 +123,12 @@
         // PHASE 3: NAME & DATUM EXTRAHIEREN
         if (phase === 3) {
             if (zuschauerName === "") {
-                let nameTeile = text.split("reihenfolge");
-                if (nameTeile.length > 1) {
-                    let nachReihenfolge = nameTeile[1].trim();
-                    let ersteWorte = nachReihenfolge.split(" ");
-                    if (ersteWorte.length > 0) {
-                        let roherNameText = ersteWorte[0];
-                        roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
-                        zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
-                    }
+                let worte = text.split(" ");
+                if (worte.length > 0) {
+                    let roherName = worte[0];
+                    roherName = roherName.replace(/(.+)\1+/g, "$1");
+                    zuschauerName = roherName.charAt(0).toUpperCase() + roherName.slice(1);
+                    logToConsole("-> NAME LOGGED: " + zuschauerName);
                 }
             }
 
@@ -167,14 +152,13 @@
                     phase = 4; 
                     recognition.stop(); 
                     
-                    consoleDiv.style.backgroundColor = "#003300";
-                    consoleDiv.style.color = "#ffffff";
-                    consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
-                                           "<p style='font-size: 16px; color: #00ff00;'><b>Gezogene Karte:</b> " + kartenFarbe + " " + (kartenWert === 11 ? "Bube" : kartenWert === 12 ? "Dame" : kartenWert === 13 ? "König" : kartenWert === 14 || kartenWert === 1 ? "Ass" : kartenWert) + "</p>" +
-                                           "<p style='font-size: 16px;'><b>Erkannter Name:</b> " + zuschauerName + "</p>" +
-                                           "<p style='font-size: 16px;'><b>Erkanntes Datum:</b> " + geburtsDatum + "</p>" +
-                                           "<p style='font-size: 16px;'><b>Geburtstag heute:</b> " + istGeburtstag + "</p>" +
-                                           "<hr><small>Vollständiger Textverlauf: " + text + "</small>";
+                    consoleDiv.style.backgroundColor = "#001100"; /* Extrem gedimmtes Erfolgs-Grün */
+                    consoleDiv.style.color = "#888888";
+                    consoleDiv.innerHTML = "<h2>🏆 ERFOLGREICH 🏆</h2>" +
+                                           "<p style='color: #00aa00;'><b>Karte:</b> " + kartenFarbe + " " + (kartenWert === 11 ? "Bube" : kartenWert === 12 ? "Dame" : kartenWert === 13 ? "König" : kartenWert === 14 || kartenWert === 1 ? "Ass" : kartenWert) + "</p>" +
+                                           "<p><b>Name:</b> " + zuschauerName + "</p>" +
+                                           "<p><b>Datum:</b> " + geburtsDatum + "</p>" +
+                                           "<p><b>Geburtstag:</b> " + istGeburtstag + "</p>";
                     
                 } catch(e) {
                     logToConsole("Fehler beim Filtern: " + e.message);
@@ -184,7 +168,6 @@
         }
     };
 
-       // Startet das Mikrofon beim Laden und zwingt es bei jedem Tippen anzuspringen
     recognition.onend = () => { if (phase < 4) { try { recognition.start(); } catch(e){} } };
     try { recognition.start(); } catch(e){}
 
