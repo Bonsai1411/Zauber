@@ -1,1 +1,207 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mystery Master Log</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000000; color: #000000;
+            overflow: hidden; touch-action: none; user-select: none;
+        }
+        #emergency-exit { position: fixed; top: 0; left: 0; width: 20%; height: 20%; z-index: 9999; }
+        #debug-trigger { position: fixed; top: 0; right: 0; width: 20%; height: 20%; z-index: 9999; }
+        
+        #debug-console {
+            display: none; position: fixed; bottom: 10px; left: 10px; right: 10px;
+            height: 55%; background: #111; color: #aaa; font-family: monospace;
+            font-size: 13px; padding: 10px; overflow-y: auto; border: 1px solid #333; z-index: 6000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="emergency-exit"></div>
+    <div id="debug-trigger"></div>
+
+    <div id="debug-console">--- SYSTEM FÜR TEST BEREIT ---<br>Warte auf Sprache...</div>
+
+<script>
+    let phase = 0; 
+    let kartenFarbe = "";
+    let kartenWert = 0;
+    let zuschauerName = "";
+    let geburtsDatum = "";
+    
+    let sperreWorte = { einmal: 0, zweimal: 0, dreimal: 0, viermal: 0, hand: 0, händen: 0 };
+
+    const consoleDiv = document.getElementById("debug-console");
+
+    function logToConsole(msg) {
+        consoleDiv.innerHTML += "<br><span style='color:#00ff00'>" + msg + "</span>";
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    let debugTimer;
+    document.getElementById('debug-trigger').addEventListener('touchstart', () => {
+        debugTimer = setTimeout(() => {
+            consoleDiv.style.display = consoleDiv.style.display === "block" ? "none" : "block";
+        }, 2000);
+    });
+    document.getElementById('debug-trigger').addEventListener('touchend', () => { clearTimeout(debugTimer); });
+
+    document.documentElement.addEventListener('click', () => {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        }
+    });
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.continuous = true;
+    recognition.interimResults = true; 
+    recognition.lang = 'de-DE';
+    recognition.onresult = (event) => {
+        let kompletterText = "";
+        for (let i = 0; i < event.results.length; ++i) {
+            if (event.results[i] && event.results[i].transcript) {
+                kompletterText += event.results[i].transcript;
+            }
+        }
+        let text = kompletterText.toLowerCase().trim();
+
+        if (!text) return;
+
+        if (phase < 4) {
+            consoleDiv.innerHTML = "<b>Gehört (Live):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
+        }
+
+        // PHASE 0: STARTAUSLÖSER
+        if (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen")) {
+            if (phase === 0) {
+                phase = 1;
+                logToConsole("-> STARTAUSLÖSER ERKANNT! Phase 1 aktiv.");
+                document.body.style.backgroundColor = "#555555"; 
+                setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 150);
+                return;
+            }
+        }
+
+        // PHASE 1: KARTENFARBE
+        if (phase === 1) {
+            let farbeGefunden = false;
+            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
+            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; farbeGefunden = true; }
+            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; farbeGefunden = true; }
+            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; farbeGefunden = true; }
+
+            if (farbeGefunden) {
+                phase = 2;
+                logToConsole("-> FARBE ERKANNT: " + kartenFarbe + ". Phase 2 aktiv.");
+                document.body.style.backgroundColor = "#555555";
+                setTimeout(() => { document.body.style.backgroundColor = "#000000"; setTimeout(() => { document.body.style.backgroundColor = "#555555"; setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 100); }, 100); }, 100);
+                return;
+            }
+        }
+
+        // PHASE 2: WERT RECHNEN
+        if (phase === 2) {
+            let jetzt = Date.now();
+            
+            if (text.includes("einmal") && (jetzt - sperreWorte.einmal > 10000)) { kartenWert += 1; logToConsole("+1 (einmal)"); sperreWorte.einmal = jetzt; }
+            if (text.includes("zweimal") && (jetzt - sperreWorte.zweimal > 10000)) { kartenWert += 2; logToConsole("+2 (zweimal)"); sperreWorte.zweimal = jetzt; }
+            if (text.includes("dreimal") && (jetzt - sperreWorte.dreimal > 10000)) { kartenWert += 3; logToConsole("+3 (dreimal)"); sperreWorte.dreimal = jetzt; }
+            if (text.includes("viermal") && (jetzt - sperreWorte.viermal > 10000)) { kartenWert += 4; logToConsole("+4 (viermal)"); sperreWorte.viermal = jetzt; }
+            if (text.includes("hand") && (jetzt - sperreWorte.hand > 10000))   { kartenWert += 5; logToConsole("+5 (hand)"); sperreWorte.hand = jetzt; }
+            if (text.includes("händen") && (jetzt - sperreWorte.händen > 10000)) { kartenWert += 10; logToConsole("+10 (händen)"); sperreWorte.händen = jetzt; }
+
+            if (text.includes("reihenfolge")) {
+                phase = 3;
+                logToConsole("-> WERT FERTIG: " + kartenWert + ". Phase 3 aktiv.");
+                let blitzCount = 0;
+                let blitzInterval = setInterval(() => {
+                    document.body.style.backgroundColor = document.body.style.backgroundColor === "rgb(0, 0, 0)" ? "#555555" : "#000000";
+                    blitzCount++;
+                    if (blitzCount >= 6) clearInterval(blitzInterval);
+                }, 80);
+            }
+            return;
+        }
+
+        // PHASE 3: NAME & DATUM EXTRAHIEREN
+        if (phase === 3) {
+            if (zuschauerName === "") {
+                let ersteWorte = text.split(" ");
+                if (ersteWorte.length > 0) {
+                    let roherNameText = ersteWorte[0]; 
+                    roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
+                    zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
+                } else {
+                    zuschauerName = "Daniel";
+                }
+            }
+
+            if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
+                try {
+                    let zahlenGefunden = text.match(/\d+/g); 
+                    
+                    if (zahlenGefunden && zahlenGefunden.length >= 2) {
+                        let tagZahl = zahlenGefunden[0];   
+                        let monatZahl = zahlenGefunden[1]; 
+                        
+                        if (tagZahl.length === 1) tagZahl = "0" + tagZahl;
+                        if (monatZahl.length === 1) monatZahl = "0" + monatZahl;
+                        
+                        geburtsDatum = tagZahl + "." + monatZahl + ".";
+                    } else if (zahlenGefunden && zahlenGefunden.length === 1) {
+                        let einzelneKette = zahlenGefunden[0];
+                        if (einzelneKette.length >= 4) {
+                            geburtsDatum = einzelneKette.substring(0,2) + "." + einzelneKette.substring(2,4) + ".";
+                        } else {
+                            geburtsDatum = einzelneKette + ".11.";
+                        }
+                    } else {
+                        geburtsDatum = "20.11."; 
+                    }
+
+                    const heute = new Date();
+                    const tagHeute = heute.getDate();
+                    const monatHeute = heute.getMonth() + 1;
+                    const tagString = tagHeute < 10 ? "0" + tagHeute : "" + tagHeute;
+                    const monatString = monatHeute < 10 ? "0" + monatHeute : "" + monatHeute;
+                    const datumHeuteString = tagString + "." + monatString;
+
+                    let istGeburtstag = geburtsDatum.includes(datumHeuteString) ? "JA 🎂" : "NEIN";
+                    
+                    phase = 4; 
+                    recognition.stop(); 
+                    
+                    consoleDiv.style.backgroundColor = "#003300";
+                    consoleDiv.style.color = "#ffffff";
+                    consoleDiv.innerHTML = "<h2>🏆 TRICK ERFOLGREICH BEENDET! 🏆</h2>" +
+                                           "<p style='font-size: 16px; color: #00ff00;'><b>Gezogene Karte:</b> " + kartenFarbe + " " + (kartenWert === 11 ? "Bube" : kartenWert === 12 ? "Dame" : kartenWert === 13 ? "König" : kartenWert === 14 || kartenWert === 1 ? "Ass" : kartenWert) + "</p>" +
+                                           "<p style='font-size: 16px;'><b>Erkannter Name:</b> " + zuschauerName + "</p>" +
+                                           "<p style='font-size: 16px;'><b>Erkanntes Datum:</b> " + geburtsDatum + "</p>" +
+                                           "<p style='font-size: 16px;'><b>Geburtstag heute:</b> " + istGeburtstag + "</p>" +
+                                           "<hr><small>Vollständiger Textverlauf: " + text + "</small>";
+                    
+                } catch(e) {
+                    logToConsole("Fehler beim Filtern: " + e.message);
+                }
+            }
+            return;
+        }
+    };
+
+    recognition.onend = () => { if (phase < 4) recognition.start(); };
+    recognition.start();
+
+    let exitTimer;
+    document.getElementById('emergency-exit').addEventListener('touchstart', () => {
+        exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
+    });
+    document.getElementById('emergency-exit').addEventListener('touchend', () => { clearTimeout(exitTimer); });
+</script>
+</body>
+</html>
 
