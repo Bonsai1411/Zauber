@@ -11,8 +11,8 @@
             overflow: hidden; touch-action: none; user-select: none;
         }
         #emergency-exit { position: fixed; top: 0; left: 0; width: 20%; height: 20%; z-index: 9999; }
+        #debug-trigger { position: fixed; top: 0; right: 0; width: 20%; height: 20%; z-index: 9999; }
         
-        /* Das erweiterte Kontrollfenster für den Laptop-Test */
         #debug-console {
             display: none; position: fixed; bottom: 10px; left: 10px; right: 10px;
             height: 55%; background: #111; color: #aaa; font-family: monospace;
@@ -23,8 +23,9 @@
 <body>
 
     <div id="emergency-exit"></div>
+    <div id="debug-trigger"></div>
 
-    <div id="debug-console">--- SYSTEM FÜR PC-TEST BEREIT ---<br>Drücke 'D' für Log-Anzeige | Warte auf Sprache...</div>
+    <div id="debug-console">--- SYSTEM BEREIT ---<br>Klicke oben rechts / Taste 'D' für Log | Warte auf Sprache...</div>
 
 <script>
     let phase = 0; 
@@ -37,28 +38,27 @@
 
     const consoleDiv = document.getElementById("debug-console");
 
+    function umschalteLog() {
+        consoleDiv.style.display = consoleDiv.style.display === "block" ? "none" : "block";
+    }
+
     function logToConsole(msg) {
         consoleDiv.innerHTML += "<br><span style='color:#00ff00'>" + msg + "</span>";
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
     }
 
-    // DIE NEUE PC-TASTATUR-STEUERUNG: Taste 'd' öffnet/schließt das Log am Laptop!
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'd' || event.key === 'D') {
-            consoleDiv.style.display = consoleDiv.style.display === "block" ? "none" : "block";
-        }
-    });
+    document.getElementById('debug-trigger').addEventListener('click', umschalteLog);
+    window.addEventListener('keydown', (e) => { if (e.key === 'd' || e.key === 'D') umschalteLog(); });
 
     document.documentElement.addEventListener('click', () => {
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen();
-        }
+        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
     });
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = true;
     recognition.interimResults = true; 
     recognition.lang = 'de-DE';
+
     recognition.onresult = (event) => {
         let kompletterText = "";
         for (let i = 0; i < event.results.length; ++i) {
@@ -67,7 +67,6 @@
             }
         }
         let text = kompletterText.toLowerCase().trim();
-
         if (!text) return;
 
         if (phase < 4) {
@@ -105,7 +104,6 @@
         // PHASE 2: WERT RECHNEN
         if (phase === 2) {
             let jetzt = Date.now();
-            
             if (text.includes("einmal") && (jetzt - sperreWorte.einmal > 10000)) { kartenWert += 1; logToConsole("+1 (einmal)"); sperreWorte.einmal = jetzt; }
             if (text.includes("zweimal") && (jetzt - sperreWorte.zweimal > 10000)) { kartenWert += 2; logToConsole("+2 (zweimal)"); sperreWorte.zweimal = jetzt; }
             if (text.includes("dreimal") && (jetzt - sperreWorte.dreimal > 10000)) { kartenWert += 3; logToConsole("+3 (dreimal)"); sperreWorte.dreimal = jetzt; }
@@ -126,12 +124,16 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN (Maßgeschneidert für "...die 20 und die 11...")
+        // PHASE 3: NAME & DATUM EXTRAHIEREN (Absolut repariert und absturzsicher!)
         if (phase === 3) {
             if (zuschauerName === "") {
-                let ersteWorte = text.split(" ");
-                if (ersteWorte.length > 0) {
-                    let roherNameText = ersteWorte; 
+                // Trennt den Text beim Wort "reihenfolge", um das erste Wort danach als Namen zu holen
+                let nameTeile = text.split("reihenfolge");
+                if (nameTeile.length > 1) {
+                    let nachReihenfolge = nameTeile[1].trim();
+                    let ersteWorte = nachReihenfolge.split(" ");
+                    let roherNameText = ersteWorte[0] || "Daniel";
+                    // .replace wird jetzt vorschriftsmäßig auf reinen Text angewendet!
                     roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
                     zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
                 } else {
@@ -142,36 +144,20 @@
             if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
                 try {
                     let zahlenGefunden = text.match(/\d+/g); 
-                    
                     if (zahlenGefunden && zahlenGefunden.length >= 2) {
-                        let tagZahl = zahlenGefunden;   
-                        let monatZahl = zahlenGefunden; 
-                        
+                        let tagZahl = zahlenGefunden[zahlenGefunden.length - 2];   
+                        let monatZahl = zahlenGefunden[zahlenGefunden.length - 1]; 
                         if (tagZahl.length === 1) tagZahl = "0" + tagZahl;
                         if (monatZahl.length === 1) monatZahl = "0" + monatZahl;
-                        
                         geburtsDatum = tagZahl + "." + monatZahl + ".";
-                    } else if (zahlenGefunden && zahlenGefunden.length === 1) {
-                        let einzelneKette = zahlenGefunden;
-                        if (einzelneKette.length >= 4) {
-                            geburtsDatum = einzelneKette.substring(0,2) + "." + einzelneKette.substring(2,4) + ".";
-                        } else {
-                            geburtsDatum = einzelneKette + ".11.";
-                        }
                     } else {
                         geburtsDatum = "20.11."; 
                     }
 
-                    // Echtzeit-Abgleich für Geburtstag heute (02.08.2026)
                     const heute = new Date();
-                    const tagHeute = heute.getDate();
-                    const monatHeute = heute.getMonth() + 1;
-                    const tagString = tagHeute < 10 ? "0" + tagHeute : "" + tagHeute;
-                    const monatString = monatHeute < 10 ? "0" + monatHeute : "" + monatHeute;
-                    const datumHeuteString = tagString + "." + monatString;
+                    const datumHeuteString = (heute.getDate() < 10 ? "0" + heute.getDate() : heute.getDate()) + "." + ((heute.getMonth() + 1) < 10 ? "0" + (heute.getMonth() + 1) : (heute.getMonth() + 1));
 
                     let istGeburtstag = geburtsDatum.includes(datumHeuteString) ? "JA 🎂" : "NEIN";
-                    
                     phase = 4; 
                     recognition.stop(); 
                     
@@ -195,7 +181,6 @@
     recognition.onend = () => { if (phase < 4) recognition.start(); };
     recognition.start();
 
-    // NOTAUSSTIEG (Bleibt für das S26 erhalten, falls Sie dort testen)
     let exitTimer;
     document.getElementById('emergency-exit').addEventListener('touchstart', () => {
         exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
