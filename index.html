@@ -11,8 +11,8 @@
             overflow: hidden; touch-action: none; user-select: none;
         }
         #emergency-exit { position: fixed; top: 0; left: 0; width: 20%; height: 20%; z-index: 9999; }
-        #debug-trigger { position: fixed; top: 0; right: 0; width: 20%; height: 20%; z-index: 9999; }
         
+        /* Das erweiterte Kontrollfenster für den Laptop-Test */
         #debug-console {
             display: none; position: fixed; bottom: 10px; left: 10px; right: 10px;
             height: 55%; background: #111; color: #aaa; font-family: monospace;
@@ -23,9 +23,8 @@
 <body>
 
     <div id="emergency-exit"></div>
-    <div id="debug-trigger"></div>
 
-    <div id="debug-console">--- SYSTEM FÜR TEST BEREIT ---<br>Warte auf Sprache...</div>
+    <div id="debug-console">--- SYSTEM FÜR PC-TEST BEREIT ---<br>Drücke 'D' für Log-Anzeige | Warte auf Sprache...</div>
 
 <script>
     let phase = 0; 
@@ -43,13 +42,12 @@
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
     }
 
-    let debugTimer;
-    document.getElementById('debug-trigger').addEventListener('touchstart', () => {
-        debugTimer = setTimeout(() => {
+    // DIE NEUE PC-TASTATUR-STEUERUNG: Taste 'd' öffnet/schließt das Log am Laptop!
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'd' || event.key === 'D') {
             consoleDiv.style.display = consoleDiv.style.display === "block" ? "none" : "block";
-        }, 2000);
+        }
     });
-    document.getElementById('debug-trigger').addEventListener('touchend', () => { clearTimeout(debugTimer); });
 
     document.documentElement.addEventListener('click', () => {
         if (document.documentElement.requestFullscreen) {
@@ -128,12 +126,12 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN
+        // PHASE 3: NAME & DATUM EXTRAHIEREN (Maßgeschneidert für "...die 20 und die 11...")
         if (phase === 3) {
             if (zuschauerName === "") {
                 let ersteWorte = text.split(" ");
                 if (ersteWorte.length > 0) {
-                    let roherNameText = ersteWorte[0]; 
+                    let roherNameText = ersteWorte; 
                     roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
                     zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
                 } else {
@@ -146,15 +144,15 @@
                     let zahlenGefunden = text.match(/\d+/g); 
                     
                     if (zahlenGefunden && zahlenGefunden.length >= 2) {
-                        let tagZahl = zahlenGefunden[0];   
-                        let monatZahl = zahlenGefunden[1]; 
+                        let tagZahl = zahlenGefunden;   
+                        let monatZahl = zahlenGefunden; 
                         
                         if (tagZahl.length === 1) tagZahl = "0" + tagZahl;
                         if (monatZahl.length === 1) monatZahl = "0" + monatZahl;
                         
                         geburtsDatum = tagZahl + "." + monatZahl + ".";
                     } else if (zahlenGefunden && zahlenGefunden.length === 1) {
-                        let einzelneKette = zahlenGefunden[0];
+                        let einzelneKette = zahlenGefunden;
                         if (einzelneKette.length >= 4) {
                             geburtsDatum = einzelneKette.substring(0,2) + "." + einzelneKette.substring(2,4) + ".";
                         } else {
@@ -164,6 +162,7 @@
                         geburtsDatum = "20.11."; 
                     }
 
+                    // Echtzeit-Abgleich für Geburtstag heute (02.08.2026)
                     const heute = new Date();
                     const tagHeute = heute.getDate();
                     const monatHeute = heute.getMonth() + 1;
@@ -196,6 +195,7 @@
     recognition.onend = () => { if (phase < 4) recognition.start(); };
     recognition.start();
 
+    // NOTAUSSTIEG (Bleibt für das S26 erhalten, falls Sie dort testen)
     let exitTimer;
     document.getElementById('emergency-exit').addEventListener('touchstart', () => {
         exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
@@ -204,4 +204,3 @@
 </script>
 </body>
 </html>
-
