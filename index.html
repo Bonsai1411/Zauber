@@ -10,12 +10,13 @@
             background-color: #000000; color: #000000;
             overflow: hidden; touch-action: none; user-select: none;
         }
-        /* Die unzerstörbaren Touch- und Klickzonen */
+        /* Die geheimen Touch-Bereiche für das Handy */
         #emergency-exit { position: fixed; top: 0; left: 0; width: 25%; height: 25%; z-index: 99999; }
         #debug-trigger { position: fixed; top: 0; right: 0; width: 25%; height: 25%; z-index: 99999; background: transparent; }
         
+        /* Am Laptop ist das Fenster jetzt direkt von Anfang an offen (display: block) */
         #debug-console {
-            display: none; position: fixed; bottom: 10px; left: 10px; right: 10px;
+            display: block; position: fixed; bottom: 10px; left: 10px; right: 10px;
             height: 55%; background: #111; color: #aaa; font-family: monospace;
             font-size: 13px; padding: 10px; overflow-y: auto; border: 1px solid #333; z-index: 99999;
         }
@@ -26,7 +27,7 @@
     <div id="emergency-exit"></div>
     <div id="debug-trigger"></div>
 
-    <div id="debug-console">--- SYSTEM BEREIT ---<br>Tippe oben rechts / Taste 'D' für Log | Warte auf Sprache...</div>
+    <div id="debug-console">--- SYSTEM BEREIT ---<br>Handy: Tippe oben rechts zum Verstecken | Warte auf Sprache...</div>
 
 <script>
     let phase = 0; 
@@ -48,8 +49,13 @@
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
     }
 
-    // Beide Auslöser fest verdrahtet
-    document.getElementById('debug-trigger').addEventListener('click', (e) => { e.stopPropagation(); umschalteLog(); });
+    // UNKAPUTTBARES TOUCH-EVENT FÜR DAS HANDY (Reagiert sofort beim Berühren!)
+    document.getElementById('debug-trigger').addEventListener('touchstart', (e) => { 
+        e.preventDefault(); // Stoppt den Vollbild-Klick-Konflikt eiskalt!
+        umschalteLog(); 
+    });
+
+    // Für den Laptop-Test (Taste 'D' funktioniert weiterhin)
     window.addEventListener('keydown', (e) => { if (e.key === 'd' || e.key === 'D') umschalteLog(); });
 
     document.documentElement.addEventListener('click', () => {
@@ -64,8 +70,8 @@
     recognition.onresult = (event) => {
         let kompletterText = "";
         for (let i = 0; i < event.results.length; ++i) {
-            if (event.results[i] && event.results[i][0]) {
-                kompletterText += event.results[i][0].transcript;
+            if (event.results[i] && event.results[i].transcript) {
+                kompletterText += event.results[i].transcript;
             }
         }
         let text = kompletterText.toLowerCase().trim();
@@ -133,9 +139,11 @@
                 if (nameTeile.length > 1) {
                     let nachReihenfolge = nameTeile[1].trim();
                     let ersteWorte = nachReihenfolge.split(" ");
-                    let roherNameText = ersteWorte[0] || "Daniel";
-                    roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
-                    zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
+                    if (ersteWorte.length > 0) {
+                        let roherNameText = ersteWorte[0];
+                        roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
+                        zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
+                    }
                 }
             }
 
