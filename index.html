@@ -42,17 +42,21 @@
         consoleDiv.style.display = consoleDiv.style.display === "block" ? "none" : "block";
     }
 
-    function logToConsole(msg) {
-        consoleDiv.innerHTML += "<br><span style='color:#00ff00'>" + msg + "</span>";
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    // FUNKTION ZUM UMSCHALTEN DES LOG-FENSTERS
+    function umschalteLog() {
+        consoleDiv.style.display = consoleDiv.style.display === "block" ? "none" : "block";
     }
 
+    // METHODE 1: REAGIERT AUF KLICKEN / TIPPEN IN DER OBEREN RECHTEN ECKE (Handy & PC)
     document.getElementById('debug-trigger').addEventListener('click', umschalteLog);
-    window.addEventListener('keydown', (e) => { if (e.key === 'd' || e.key === 'D') umschalteLog(); });
 
-    document.documentElement.addEventListener('click', () => {
-        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    // METHODE 2: REAGIERT AUF DIE TASTE 'D' (Laptop-Tastatur)
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'd' || event.key === 'D') {
+            umschalteLog();
+        }
     });
+
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = true;
