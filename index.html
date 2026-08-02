@@ -65,7 +65,7 @@
     recognition.onresult = (event) => {
         let kompletterText = "";
         for (let i = 0; i < event.results.length; ++i) {
-            if (event.results[i] && event.results[i]) {
+            if (event.results[i] && event.results[i].transcript) {
                 kompletterText += event.results[i].transcript;
             }
         }
@@ -78,12 +78,14 @@
         }
 
         // PHASE 0: STARTAUSLÖSER
-        if (phase === 0 && (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen"))) {
-            phase = 1;
-            logToConsole("-> STARTAUSLÖSER ERKANNT! Phase 1 aktiv.");
-            document.body.style.backgroundColor = "#555555"; 
-            setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 150);
-            return;
+        if (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen")) {
+            if (phase === 0) {
+                phase = 1;
+                logToConsole("-> STARTAUSLÖSER ERKANNT! Phase 1 aktiv.");
+                document.body.style.backgroundColor = "#555555"; 
+                setTimeout(() => { document.body.style.backgroundColor = "#000000"; }, 150);
+                return;
+            }
         }
 
         // PHASE 1: KARTENFARBE
@@ -127,13 +129,17 @@
             return;
         }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN
+        // PHASE 3: NAME & DATUM EXTRAHIEREN (Repariert und absolut crash-sicher!)
         if (phase === 3) {
             if (zuschauerName === "") {
                 let ersteWorte = text.split(" ");
-                let roherNameText = ersteWorte[0] || "Daniel";
-                roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
-                zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
+                if (ersteWorte.length > 0) {
+                    let roherNameText = ersteWorte[0]; // Holt das erste echte Wort nach der Kartenzählung
+                    roherNameText = roherNameText.replace(/(.+)\1+/g, "$1");
+                    zuschauerName = roherNameText.charAt(0).toUpperCase() + roherNameText.slice(1);
+                } else {
+                    zuschauerName = "Daniel";
+                }
             }
 
             if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
@@ -192,6 +198,7 @@
     recognition.start();
 
     let exitTimer;
+
     document.getElementById('emergency-exit').addEventListener('touchstart', () => {
         exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
     });
