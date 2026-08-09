@@ -1,69 +1,141 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
-    <title>Mystery Master Log</title>
-    <style>
-        html, body {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #050505; color: #222222; /* Extrem gedimmtes Grund-Design */
-            overflow: hidden; touch-action: none; user-select: none;
-        }
-        #emergency-exit { position: fixed; top: 0; left: 0; width: 25%; height: 25%; z-index: 99999; }
-        #debug-trigger { position: fixed; top: 0; right: 0; width: 25%; height: 25%; z-index: 99999; background: transparent; }
-        
-        /* Das gedimmte Kontrollfenster - schimmert ganz schwach in Dunkelgrau/Dunkelgrün */
-        #debug-console {
-            display: block; position: fixed; bottom: 10px; left: 10px; right: 10px;
-            height: 55%; background: #0a0a0a; color: #444444; font-family: monospace;
-            font-size: 13px; padding: 10px; overflow-y: auto; border: 1px solid #1a1a1a; z-index: 99999;
-        }
-        
-        /* DIE DIGITALE TARNKAPPE: Legt sich über alles und schluckt 99.5% des Lichts */
-        #tarnkappe {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #000000; opacity: 0.995; pointer-events: none; z-index: 88888;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
+
+<title>Mystery Master Log</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #050505;
+    color: #222222;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+}
+
+#emergency-exit {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 25%;
+    height: 25%;
+    z-index: 99999;
+}
+
+#debug-trigger {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 25%;
+    height: 25%;
+    z-index: 99999;
+    background: transparent;
+}
+
+/* Das gedimmte Kontrollfenster */
+#debug-console {
+    display: block;
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    height: 55%;
+    background: #0a0a0a;
+    color: #444444;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 10px;
+    overflow-y: auto;
+    border: 1px solid #1a1a1a;
+    z-index: 99999;
+}
+
+/* Die digitale Tarnkappe */
+#tarnkappe {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+    opacity: 0.995;
+    pointer-events: none;
+    z-index: 88888;
+}
+</style>
 </head>
+
 <body>
 
-    <div id="emergency-exit"></div>
-    <div id="debug-trigger"></div>
-    <div id="tarnkappe"></div> <!-- Schluckt das Licht live auf dem Display -->
+<div id="emergency-exit"></div>
+<div id="debug-trigger"></div>
+<div id="tarnkappe"></div>
 
-    <div id="debug-console">--- DIGITALE DIMMUNG AKTIV ---<br>Warte auf Sprache...</div>
+<div id="debug-console">
+    --- DIGITALE DIMMUNG AKTIV ---<br>
+    Warte auf Sprache...
+</div>
 
 <script>
-    let phase = 0; 
-    let kartenFarbe = "";
-    let kartenWert = 0;
-    let zuschauerName = "";
-    let geburtsDatum = "";
-    
-    let sperreWorte = { einmal: 0, zweimal: 0, dreimal: 0, viermal: 0, hand: 0, händen: 0 };
 
-    const consoleDiv = document.getElementById("debug-console");
+let phase = 0;
+let kartenFarbe = "";
+let kartenWert = 0;
+let zuschauerName = "";
+let geburtsDatum = "";
 
-    function umschalteLog() {
-        consoleDiv.style.display = consoleDiv.style.display === "block" ? "none" : "block";
-    }
+let sperreWorte = {
+    einmal: 0,
+    zweimal: 0,
+    dreimal: 0,
+    viermal: 0,
+    hand: 0,
+    händen: 0
+};
 
-    function logToConsole(msg) {
-        consoleDiv.innerHTML += "<br><span style='color:#116611'>" + msg + "</span>"; // Gedimmtes Grün
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
-    }
+const consoleDiv = document.getElementById("debug-console");
 
-    document.getElementById('debug-trigger').addEventListener('touchstart', (e) => { 
-        e.preventDefault(); 
-        umschalteLog(); 
-    });
 
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.continuous = true;
-    recognition.interimResults = false; 
-    recognition.lang = 'de-DE';
+function umschalteLog() {
+    consoleDiv.style.display =
+        consoleDiv.style.display === "none" ? "block" : "none";
+}
+
+
+function logToConsole(msg) {
+    consoleDiv.innerHTML +=
+        '<br><span style="color:#116611">' + msg + "</span>";
+
+    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+}
+
+
+document.getElementById("debug-trigger").addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    umschalteLog();
+});
+
+
+const recognition = new (
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition
+)();
+
+recognition.continuous = true;
+recognition.interimResults = true;
+recognition.lang = "de-DE";
+
+
+/* =========================================================
+   DIAGNOSE DER SPRACHERKENNUNG
+   ========================================================= */
+
 recognition.onstart = () => {
     logToConsole("🎤 SPRACHERKENNUNG GESTARTET");
 };
@@ -81,9 +153,16 @@ recognition.onerror = (event) => {
 };
 
 recognition.onnomatch = () => {
-    logToConsole("⚠️ KEINE SPRACHE VERSTANDEN");
+    logToConsole("⚠️ SPRACHE NICHT VERSTANDEN");
 };
-    recognition.onresult = (event) => {
+
+
+/* =========================================================
+   SPRACHERGEBNIS
+   ========================================================= */
+
+recognition.onresult = (event) => {
+
     logToConsole("📝 ONRESULT WURDE AUSGELÖST");
 
     let kompletterText = "";
@@ -91,122 +170,420 @@ recognition.onnomatch = () => {
     for (let i = 0; i < event.results.length; i++) {
 
         if (event.results[i] && event.results[i][0]) {
-            logToConsole(
-                "ERGEBNIS: " + event.results[i][0].transcript
-            );
-        }
 
-        if (event.results[i] && event.results[i][0].transcript) {
-            kompletterText += event.results[i][0].transcript;
+            logToConsole(
+                "ERGEBNIS: " +
+                event.results[i][0].transcript
+            );
+
+            if (event.results[i][0].transcript) {
+                kompletterText +=
+                    event.results[i][0].transcript + " ";
+            }
         }
     }
 
-        // PHASE 0: STARTAUSLÖSER
-        if (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen")) {
-            if (phase === 0) {
-                phase = 1;
-                logToConsole("-> STARTAUSLÖSER ERKANNT! Phase 1 aktiv.");
-                return;
-            }
-        }
+    let text = kompletterText.toLowerCase().trim();
 
-        // PHASE 1: KARTENFARBE
-        if (phase === 1) {
-            let farbeGefunden = false;
-            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
-            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; farbeGefunden = true; }
-            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; farbeGefunden = true; }
-            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; farbeGefunden = true; }
+    if (!text) {
+        return;
+    }
 
-            if (farbeGefunden) {
-                phase = 2;
-                logToConsole("-> FARBE ERKANNT: " + kartenFarbe + ". Phase 2 aktiv.");
-                return;
-            }
-        }
 
-        // PHASE 2: WERT RECHNEN
-        if (phase === 2) {
-            let jetzt = Date.now();
-            if (text.includes("einmal") && (jetzt - sperreWorte.einmal > 10000)) { kartenWert += 1; logToConsole("+1 (einmal)"); sperreWorte.einmal = jetzt; }
-            if (text.includes("zweimal") && (jetzt - sperreWorte.zweimal > 10000)) { kartenWert += 2; logToConsole("+2 (zweimal)"); sperreWorte.zweimal = jetzt; }
-            if (text.includes("dreimal") && (jetzt - sperreWorte.dreimal > 10000)) { kartenWert += 3; logToConsole("+3 (dreimal)"); sperreWorte.dreimal = jetzt; }
-            if (text.includes("viermal") && (jetzt - sperreWorte.viermal > 10000)) { kartenWert += 4; logToConsole("+4 (viermal)"); sperreWorte.viermal = jetzt; }
-            if (text.includes("hand") && (jetzt - sperreWorte.hand > 10000))   { kartenWert += 5; logToConsole("+5 (hand)"); sperreWorte.hand = jetzt; }
-            if (text.includes("händen") && (jetzt - sperreWorte.händen > 10000)) { kartenWert += 10; logToConsole("+10 (händen)"); sperreWorte.händen = jetzt; }
+    /* =====================================================
+       LIVE-ANZEIGE
+       ===================================================== */
 
-            if (text.includes("reihenfolge")) {
-                phase = 3;
-                logToConsole("-> WERT FERTIG: " + kartenWert + ". Phase 3 aktiv.");
-            }
+    if (phase < 4) {
+
+        consoleDiv.innerHTML =
+            '<b>Gehört (Live):</b> "' +
+            text +
+            '"<br><br>' +
+            '<b>Phase:</b> ' +
+            phase +
+            '<br>' +
+            '<b>Farbe:</b> ' +
+            kartenFarbe +
+            '<br>' +
+            '<b>Wert:</b> ' +
+            kartenWert +
+            '<br>';
+
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+
+    /* =====================================================
+       PHASE 0: STARTAUSLÖSER
+       ===================================================== */
+
+    if (
+        text.includes("nochmal zusammen") ||
+        text.includes("noch mal zusammen") ||
+        text.includes("zusammen")
+    ) {
+
+        if (phase === 0) {
+
+            phase = 1;
+
+            logToConsole(
+                "-> STARTAUSLÖSER ERKANNT! Phase 1 aktiv."
+            );
+
             return;
         }
+    }
 
-        // PHASE 3: NAME & DATUM EXTRAHIEREN
-        if (phase === 3) {
-            if (zuschauerName === "") {
-                let worte = text.split(" ");
-                if (worte.length > 0) {
-                    let roherName = worte[0];
-                    roherName = roherName.replace(/(.+)\1+/g, "$1");
-                    zuschauerName = roherName.charAt(0).toUpperCase() + roherName.slice(1);
-                    logToConsole("-> NAME LOGGED: " + zuschauerName);
-                }
+
+    /* =====================================================
+       PHASE 1: KARTENFARBE
+       ===================================================== */
+
+    if (phase === 1) {
+
+        let farbeGefunden = false;
+
+        if (text.includes("passiert")) {
+            kartenFarbe = "Pik ♠";
+            farbeGefunden = true;
+        }
+
+        else if (text.includes("geschehen")) {
+            kartenFarbe = "Herz ♥";
+            farbeGefunden = true;
+        }
+
+        else if (text.includes("gewesen")) {
+            kartenFarbe = "Kreuz ♣";
+            farbeGefunden = true;
+        }
+
+        else if (text.includes("gehabt")) {
+            kartenFarbe = "Karo ♦";
+            farbeGefunden = true;
+        }
+
+
+        if (farbeGefunden) {
+
+            phase = 2;
+
+            logToConsole(
+                "-> FARBE ERKANNT: " +
+                kartenFarbe +
+                ". Phase 2 aktiv."
+            );
+
+            return;
+        }
+    }
+
+
+    /* =====================================================
+       PHASE 2: WERT RECHNEN
+       ===================================================== */
+
+    if (phase === 2) {
+
+        let jetzt = Date.now();
+
+
+        if (
+            text.includes("einmal") &&
+            (jetzt - sperreWorte.einmal > 10000)
+        ) {
+            kartenWert += 1;
+            logToConsole("+1 (einmal)");
+            sperreWorte.einmal = jetzt;
+        }
+
+
+        if (
+            text.includes("zweimal") &&
+            (jetzt - sperreWorte.zweimal > 10000)
+        ) {
+            kartenWert += 2;
+            logToConsole("+2 (zweimal)");
+            sperreWorte.zweimal = jetzt;
+        }
+
+
+        if (
+            text.includes("dreimal") &&
+            (jetzt - sperreWorte.dreimal > 10000)
+        ) {
+            kartenWert += 3;
+            logToConsole("+3 (dreimal)");
+            sperreWorte.dreimal = jetzt;
+        }
+
+
+        if (
+            text.includes("viermal") &&
+            (jetzt - sperreWorte.viermal > 10000)
+        ) {
+            kartenWert += 4;
+            logToConsole("+4 (viermal)");
+            sperreWorte.viermal = jetzt;
+        }
+
+
+        if (
+            text.includes("hand") &&
+            (jetzt - sperreWorte.hand > 10000)
+        ) {
+            kartenWert += 5;
+            logToConsole("+5 (hand)");
+            sperreWorte.hand = jetzt;
+        }
+
+
+        if (
+            text.includes("händen") &&
+            (jetzt - sperreWorte.händen > 10000)
+        ) {
+            kartenWert += 10;
+            logToConsole("+10 (händen)");
+            sperreWorte.händen = jetzt;
+        }
+
+
+        if (text.includes("reihenfolge")) {
+
+            phase = 3;
+
+            logToConsole(
+                "-> WERT FERTIG: " +
+                kartenWert +
+                ". Phase 3 aktiv."
+            );
+
+            return;
+        }
+    }
+
+
+    /* =====================================================
+       PHASE 3: NAME & DATUM EXTRAHIEREN
+       ===================================================== */
+
+    if (phase === 3) {
+
+        if (!zuschauerName) {
+
+            let worte = text.split(/\s+/);
+
+            if (worte.length > 0) {
+
+                let roherName = worte[0];
+
+                roherName =
+                    roherName.replace(/(.+)\1+$/g, "$1");
+
+                zuschauerName =
+                    roherName.charAt(0).toUpperCase() +
+                    roherName.slice(1);
+
+                logToConsole(
+                    "-> NAME LOGGED: " +
+                    zuschauerName
+                );
             }
+        }
 
-            if (text.includes("verdeckt") || text.includes("verdeckten") || text.includes("verdeckte") || text.includes("verdeckter")) {
-                try {
-                    let zahlenGefunden = text.match(/\d+/g); 
-                    if (zahlenGefunden && zahlenGefunden.length >= 2) {
-                        let tagZahl = zahlenGefunden[zahlenGefunden.length - 2];   
-                        let monatZahl = zahlenGefunden[zahlenGefunden.length - 1]; 
-                        if (tagZahl.length === 1) tagZahl = "0" + tagZahl;
-                        if (monatZahl.length === 1) monatZahl = "0" + monatZahl;
-                        geburtsDatum = tagZahl + "." + monatZahl + ".";
-                    } else {
-                        geburtsDatum = "20.11."; 
+
+        if (
+            text.includes("verdeckt") ||
+            text.includes("verdeckten") ||
+            text.includes("verdeckte") ||
+            text.includes("verdeckter")
+        ) {
+
+            try {
+
+                let zahlenGefunden =
+                    text.match(/\d+/g);
+
+                if (
+                    zahlenGefunden &&
+                    zahlenGefunden.length >= 2
+                ) {
+
+                    let tagZahl =
+                        zahlenGefunden[
+                            zahlenGefunden.length - 2
+                        ];
+
+                    let monatZahl =
+                        zahlenGefunden[
+                            zahlenGefunden.length - 1
+                        ];
+
+                    if (tagZahl.length === 1) {
+                        tagZahl = "0" + tagZahl;
                     }
 
-                    const heute = new Date();
-                    const datumHeuteString = (heute.getDate() < 10 ? "0" + heute.getDate() : heute.getDate()) + "." + ((heute.getMonth() + 1) < 10 ? "0" + (heute.getMonth() + 1) : (heute.getMonth() + 1));
+                    if (monatZahl.length === 1) {
+                        monatZahl = "0" + monatZahl;
+                    }
 
-                    let istGeburtstag = geburtsDatum.includes(datumHeuteString) ? "JA 🎂" : "NEIN";
-                    phase = 4; 
-                    recognition.stop(); 
-                    
-                    consoleDiv.style.backgroundColor = "#001100"; /* Extrem gedimmtes Erfolgs-Grün */
-                    consoleDiv.style.color = "#888888";
-                    consoleDiv.innerHTML = "<h2>🏆 ERFOLGREICH 🏆</h2>" +
-                                           "<p style='color: #00aa00;'><b>Karte:</b> " + kartenFarbe + " " + (kartenWert === 11 ? "Bube" : kartenWert === 12 ? "Dame" : kartenWert === 13 ? "König" : kartenWert === 14 || kartenWert === 1 ? "Ass" : kartenWert) + "</p>" +
-                                           "<p><b>Name:</b> " + zuschauerName + "</p>" +
-                                           "<p><b>Datum:</b> " + geburtsDatum + "</p>" +
-                                           "<p><b>Geburtstag:</b> " + istGeburtstag + "</p>";
-                    
-                } catch(e) {
-                    logToConsole("Fehler beim Filtern: " + e.message);
+                    geburtsDatum =
+                        tagZahl + "." + monatZahl + ".";
+
+                } else {
+
+                    geburtsDatum = "20.11.";
                 }
-            }
-            return;
-        }
-    };
 
-  recognition.onend = () => {
-    logToConsole("⏹️ ERKENNUNG BEENDET");
+
+                const heute = new Date();
+
+                const datumHeuteString =
+                    (
+                        heute.getDate() < 10
+                            ? "0" + heute.getDate()
+                            : heute.getDate()
+                    ) +
+                    "." +
+                    (
+                        (heute.getMonth() + 1) < 10
+                            ? "0" + (heute.getMonth() + 1)
+                            : (heute.getMonth() + 1)
+                    );
+
+
+                let istGeburtstag =
+                    geburtsDatum.includes(datumHeuteString)
+                        ? "JA 🎂"
+                        : "NEIN";
+
+
+                phase = 4;
+
+                recognition.stop();
+
+
+                consoleDiv.style.backgroundColor =
+                    "#001100";
+
+                consoleDiv.style.color =
+                    "#888888";
+
+
+                consoleDiv.innerHTML =
+                    "<h2>🎉 ERFOLGREICH 🎉</h2>" +
+
+                    "<p style='color:#203200'>" +
+                    "<b>Karte:</b> " +
+                    kartenFarbe +
+                    " " +
+
+                    (
+                        kartenWert === 11
+                            ? "Bube"
+                            : kartenWert === 12
+                            ? "Dame"
+                            : kartenWert === 13
+                            ? "König"
+                            : (kartenWert === 14 ||
+                               kartenWert === 1)
+                            ? "Ass"
+                            : kartenWert
+                    ) +
+
+                    "</p>" +
+
+                    "<p><b>Name:</b> " +
+                    zuschauerName +
+                    "</p>" +
+
+                    "<p><b>Geburtsdatum:</b> " +
+                    geburtsDatum +
+                    "</p>" +
+
+                    "<p><b>Geburtstag:</b> " +
+                    istGeburtstag +
+                    "</p>";
+
+            } catch (e) {
+
+                logToConsole(
+                    "Fehler beim Filtern: " +
+                    e.message
+                );
+            }
+        }
+    }
 };
 
+
+/* =========================================================
+   ERKENNUNG ENDET
+   ========================================================= */
+
+/*
+   WICHTIG:
+   Für den aktuellen Test wird NICHT automatisch
+   neu gestartet. Dadurch vermeiden wir die bisherige
+   Endlosschleife.
+*/
+
+recognition.onend = () => {
+
+    logToConsole(
+        "⏹️ SPRACHERKENNUNG BEENDET"
+    );
+
+};
+
+
+/* =========================================================
+   SPRACHERKENNUNG STARTEN
+   ========================================================= */
+
 try {
+
     recognition.start();
-} catch(e) {
-    logToConsole("❌ STARTFEHLER: " + e.message);
+
+} catch (e) {
+
+    logToConsole(
+        "❌ STARTFEHLER: " +
+        e.message
+    );
 }
-    logToConsole("❌ STARTFEHLER: " + e.message);
-}
-    let exitTimer;
-    document.getElementById('emergency-exit').addEventListener('touchstart', () => {
-        exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
+
+
+/* =========================================================
+   NOT-AUS / EXIT
+   ========================================================= */
+
+let exitTimer;
+
+document
+    .getElementById("emergency-exit")
+    .addEventListener("touchstart", () => {
+
+        exitTimer = setTimeout(() => {
+
+            window.location.reload();
+
+        }, 3000);
+
     });
-    document.getElementById('emergency-exit').addEventListener('touchend', () => { clearTimeout(exitTimer); });
+
+
+document
+    .getElementById("emergency-exit")
+    .addEventListener("touchend", () => {
+
+        clearTimeout(exitTimer);
+
+    });
+
 </script>
+
 </body>
 </html>
-
