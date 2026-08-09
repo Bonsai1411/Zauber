@@ -62,7 +62,7 @@
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = true;
-    recognition.interimResults = true; 
+    recognition.interimResults = false; 
     recognition.lang = 'de-DE';
 recognition.onstart = () => {
     logToConsole("🎤 SPRACHERKENNUNG GESTARTET");
@@ -84,18 +84,22 @@ recognition.onnomatch = () => {
     logToConsole("⚠️ KEINE SPRACHE VERSTANDEN");
 };
     recognition.onresult = (event) => {
-        let kompletterText = "";
-        for (let i = 0; i < event.results.length; ++i) {
-            if (event.results[i] && event.results[i].transcript) {
-                kompletterText += event.results[i].transcript;
-            }
-        }
-        let text = kompletterText.toLowerCase().trim();
-        if (!text) return;
+    logToConsole("📝 ONRESULT WURDE AUSGELÖST");
 
-        if (phase < 4) {
-            consoleDiv.innerHTML = "<b>Gehört (Live):</b> " + text + "<br><br><b>Phase:</b> " + phase + " | <b>Farbe:</b> " + kartenFarbe + " | <b>Wert:</b> " + kartenWert + "<br>---";
+    let kompletterText = "";
+
+    for (let i = 0; i < event.results.length; i++) {
+
+        if (event.results[i] && event.results[i][0]) {
+            logToConsole(
+                "ERGEBNIS: " + event.results[i][0].transcript
+            );
         }
+
+        if (event.results[i] && event.results[i][0].transcript) {
+            kompletterText += event.results[i][0].transcript;
+        }
+    }
 
         // PHASE 0: STARTAUSLÖSER
         if (text.includes("nochmal zusammen") || text.includes("noch mal zusammen") || text.includes("zusammen")) {
@@ -186,10 +190,15 @@ recognition.onnomatch = () => {
         }
     };
 
-    recognition.onend = () => { if (phase < 4) { try { recognition.start(); } catch(e){} } };
-    try {
+  recognition.onend = () => {
+    logToConsole("⏹️ ERKENNUNG BEENDET");
+};
+
+try {
     recognition.start();
 } catch(e) {
+    logToConsole("❌ STARTFEHLER: " + e.message);
+}
     logToConsole("❌ STARTFEHLER: " + e.message);
 }
     let exitTimer;
