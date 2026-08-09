@@ -64,7 +64,25 @@
     recognition.continuous = true;
     recognition.interimResults = true; 
     recognition.lang = 'de-DE';
+recognition.onstart = () => {
+    logToConsole("🎤 SPRACHERKENNUNG GESTARTET");
+};
 
+recognition.onaudiostart = () => {
+    logToConsole("🎧 AUDIO/MICROFON ERKANNT");
+};
+
+recognition.onspeechstart = () => {
+    logToConsole("🗣️ SPRACHE ERKANNT");
+};
+
+recognition.onerror = (event) => {
+    logToConsole("❌ SPRACHFEHLER: " + event.error);
+};
+
+recognition.onnomatch = () => {
+    logToConsole("⚠️ KEINE SPRACHE VERSTANDEN");
+};
     recognition.onresult = (event) => {
         let kompletterText = "";
         for (let i = 0; i < event.results.length; ++i) {
@@ -169,8 +187,11 @@
     };
 
     recognition.onend = () => { if (phase < 4) { try { recognition.start(); } catch(e){} } };
-    try { recognition.start(); } catch(e){}
-
+    try {
+    recognition.start();
+} catch(e) {
+    logToConsole("❌ STARTFEHLER: " + e.message);
+}
     let exitTimer;
     document.getElementById('emergency-exit').addEventListener('touchstart', () => {
         exitTimer = setTimeout(() => { window.location.reload(); }, 3000);
