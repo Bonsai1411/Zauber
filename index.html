@@ -989,6 +989,12 @@ if (!SpeechRecognition) {
        ONEND
        ===================================================== */
 
+/* =====================================================
+   ONEND
+   ===================================================== */
+
+let neustartGeplant = false;
+
 recognition.onend = () => {
 
     logToConsole(
@@ -996,17 +1002,20 @@ recognition.onend = () => {
     );
 
     /*
-    Vor „Verdeckt“ soll die Erkennung
-    automatisch wieder aufgenommen werden.
-
-    Nach „Verdeckt“ bleibt sie aus.
+    Nach „Verdeckt“ bleibt die Erkennung aus.
+    Vor „Verdeckt“ versuchen wir einen Neustart.
     */
 
-    if (
-        phase < 4
-    ) {
+    if (phase < 4 && !neustartGeplant) {
+
+        neustartGeplant = true;
 
         setTimeout(() => {
+
+            if (phase >= 4) {
+                neustartGeplant = false;
+                return;
+            }
 
             try {
 
@@ -1020,9 +1029,32 @@ recognition.onend = () => {
                 );
             }
 
-        }, 300);
+            neustartGeplant = false;
+
+        }, 800);
     }
 };
+
+
+/* =====================================================
+   ERSTER START
+   ===================================================== */
+
+setTimeout(() => {
+
+    try {
+
+        recognition.start();
+
+    } catch (e) {
+
+        logToConsole(
+            "❌ STARTFEHLER: " +
+            e.message
+        );
+    }
+
+}, 500);
 /* =========================================================
    NOT-AUS
    ========================================================= */
