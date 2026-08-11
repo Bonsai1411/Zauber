@@ -989,61 +989,40 @@ if (!SpeechRecognition) {
        ONEND
        ===================================================== */
 
-    recognition.onend = () => {
+recognition.onend = () => {
 
-        logToConsole(
-            "⏹️ SPRACHERKENNUNG BEENDET"
-        );
+    logToConsole(
+        "⏹️ SPRACHERKENNUNG BEENDET"
+    );
 
+    /*
+    Vor „Verdeckt“ soll die Erkennung
+    automatisch wieder aufgenommen werden.
 
-        /*
-        Vor „Verdeckt“ soll die Erkennung
-        automatisch wieder aufgenommen werden.
+    Nach „Verdeckt“ bleibt sie aus.
+    */
 
-        Nach „Verdeckt“ bleibt sie aus.
-        */
+    if (
+        phase < 4
+    ) {
 
-        if (
-            phase < 4
-        ) {
+        setTimeout(() => {
 
-            setTimeout(() => {
+            try {
 
-                try {
+                recognition.start();
 
-                    recognition.start();
+            } catch (e) {
 
-                } catch (e) {
+                logToConsole(
+                    "❌ NEUSTARTFEHLER: " +
+                    e.message
+                );
+            }
 
-                    logToConsole(
-                        "❌ NEUSTARTFEHLER: " +
-                        e.message
-                    );
-                }
-
-            }, 300);
-        }
-    };
-
-
-    /* =====================================================
-       ERSTER START
-       ===================================================== */
-
-    try {
-
-        recognition.start();
-
-    } catch (e) {
-
-        logToConsole(
-            "❌ STARTFEHLER: " +
-            e.message
-        );
+        }, 300);
     }
-}
-
-
+};
 /* =========================================================
    NOT-AUS
    ========================================================= */
