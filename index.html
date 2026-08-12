@@ -91,16 +91,12 @@ function logToConsole(text) {
     consoleDiv.scrollTop = consoleDiv.scrollHeight;
 }
 
+// Die gestraffte, pfeilschnelle Ur-Schublade von gestern
 const deutscheZahlen = {
     "null": 0, "eins": 1, "ein": 1, "zwei": 2, "drei": 3, "vier": 4, "fünf": 5, "funf": 5, "sechs": 6, "sieben": 7, "acht": 8, "neun": 9,
     "zehn": 10, "elf": 11, "zwölf": 12, "zwolf": 12, "dreizehn": 13, "vierzehn": 14, "fünfzehn": 15, "funfzehn": 15, "sechzehn": 16, "siebzehn": 17, "achtzehn": 18, "neunzehn": 19,
     "zwanzig": 20, "einundzwanzig": 21, "zweiundzwanzig": 22, "dreiundzwanzig": 23, "vierundzwanzig": 24, "fünfundzwanzig": 25, "funfundzwanzig": 25, "sechsundzwanzig": 26, "siebenundzwanzig": 27, "achtundzwanzig": 28, "neunundzwanzig": 29,
-    "dreißig": 30, "dreissig": 30, "einunddreißig": 31, "einunddreissig": 31,
-    "ersten": 1, "erste": 1, "erstes": 1, "zweiten": 2, "zweite": 2, "dritten": 3, "dritte": 3, "vierten": 4, "vierte": 4, "fünften": 5, "fünfte": 5,
-    "sechsten": 6, "sechste": 6, "siebten": 7, "siebte": 7, "achten": 8, "achte": 8, "neunten": 9, "neunte": 9, "zehnten": 10, "zehnte": 10,
-    "zwanzigsten": 20, "dreißigsten": 30, "einunddreißigsten": 31, "einunddreissigsten": 31,
-    "januar": 1, "jan": 1, "februar": 2, "feb": 2, "märz": 3, "maerz": 3, "april": 4, "apr": 4, "mai": 5, "juni": 6, "jun": 6, "juli": 7, "jul": 7,
-    "august": 8, "aug": 8, "september": 9, "sept": 9, "sep": 9, "oktober": 10, "okt": 10, "november": 11, "nov": 11, "dezember": 12, "dez": 12
+    "dreißig": 30, "dreissig": 30, "einunddreißig": 31, "einunddreissig": 31
 };
 
 function findeZahlen(text) {
@@ -136,7 +132,7 @@ if (!SpeechRecognition) {
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
-    recognition.continuous = false; 
+    recognition.continuous = false; // GESTERN-MODUS: Zwingt Android zur sauberen Übergabe!
     recognition.interimResults = false;
 
     recognition.onstart = () => { logToConsole("🎤 SPRACHERKENNUNG GESTARTET"); };
@@ -146,7 +142,6 @@ if (!SpeechRecognition) {
     recognition.onerror = (event) => {
         logToConsole("❌ SPRACHFEHLER: " + event.error);
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
-            logToConsole("🔄 Mikrofon-Timeout abgefangen. Starte Erfassung neu...");
             setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
         }
     };
@@ -154,11 +149,12 @@ if (!SpeechRecognition) {
     recognition.onresult = (event) => {
         for (let i = verarbeitetesResultat; i < event.results.length; i++) {
             const result = event.results[i];
-            if (!result || !result) { continue; }
-            let roherText = result.transcript.toLowerCase().trim();
+            if (!result || !result[0]) { continue; }
+            let roherText = result[0].transcript.toLowerCase().trim();
             if (!roherText) { continue; }
             verarbeitetesResultat = i + 1;
 
+            /* BÄM! DER TEXT-BÜGLER SITZT TRAGFÄHIG DRIN */
             let text = roherText
                 .replace(/ein\s+mal/g, "einmal")
                 .replace(/zwei\s+mal/g, "zweimal")
@@ -166,24 +162,20 @@ if (!SpeechRecognition) {
                 .replace(/vier\s+mal/g, "viermal")
                 .replace(/fünf\s+mal/g, "viermal")
                 .replace(/reihem\s+folge/g, "reihenfolge")
-                .replace(/reihen\s+folgen/g, "reihenfolge")
                 .replace(/reihen\s+folge/g, "reihenfolge")
                 .replace(/dein\s+datum/g, "dein datum");
 
-            logToConsole("📝 GEHÖRT (ROH): „" + roherText + "“");
-            if (roherText !== text) {
-                logToConsole("✨ GEBÜGELT ZU: „" + text + "“");
-            }
-
+            logToConsole("📝 GEHÖRT: „" + roherText + "“");
+            if (roherText !== text) { logToConsole("✨ GEBÜGELT: „" + text + "“"); }
             verarbeiteSprache(text);
         }
     };
+
     function verarbeiteSprache(text) {
         if (phase === 0) {
             if (text.includes("zusammen")) {
                 phase = 1;
-                logToConsole("▶️ „ZUSAMMEN“ ERKANNT");
-                logToConsole("PHASE 1: SUCHE KARTENFARBE");
+                logToConsole("▶️ „ZUSAMMEN“ ERKANNT -> PHASE 1");
             }
             return;
         }
@@ -196,8 +188,7 @@ if (!SpeechRecognition) {
 
             if (kartenFarbe !== "") {
                 phase = 2;
-                logToConsole("🃏 KARTENFARBE: " + kartenFarbe);
-                logToConsole("PHASE 2: CODEWÖRTER ZÄHLEN");
+                logToConsole("🃏 FARBE: " + kartenFarbe + " -> PHASE 2");
             }
             return;
         }
@@ -206,9 +197,7 @@ if (!SpeechRecognition) {
             if (text.includes("reihenfolge")) {
                 verarbeiteCodewoerter(text);
                 phase = 3;
-                logToConsole("🔒 „REIHENFOLGE“ ERKANNT");
-                logToConsole("KARTENWERT FESTGESETZT: " + kartenWert);
-                logToConsole("PHASE 3: NAME / DATUM");
+                logToConsole("🔒 „REIHENFOLGE“ -> KARTENWERT: " + kartenWert + " -> PHASE 3");
                 return;
             }
             verarbeiteCodewoerter(text);
@@ -220,8 +209,7 @@ if (!SpeechRecognition) {
             if (datumPosition > 0 && zuschauerName === "") {
                 let nameTeil = text.substring(0, datumPosition).trim();
                 nameTeil = nameTeil.replace(/^[,.:;!? ]+|[,.:;!? ]+\$/g, "");
-                if (nameTeil.toLowerCase() === "name") { nameTeil = ""; }
-                if (nameTeil !== "") {
+                if (nameTeil.toLowerCase() !== "name" && nameTeil !== "") {
                     zuschauerName = nameTeil.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
                     logToConsole("👤 NAME: " + zuschauerName);
                 }
@@ -231,47 +219,38 @@ if (!SpeechRecognition) {
             if (alsoPosition !== -1 && geburtsTag === null) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
 
+                /* DER "HEUTE"-SPEZIALTRIGGER FÜR DIE BÜHNE */
                 if (nachAlso.includes("heute") || text.includes("ist also heute")) {
                     const echtzeitUhr = new Date();
                     geburtsTag = echtzeitUhr.getDate();
                     geburtsMonat = echtzeitUhr.getMonth() + 1;
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                    logToConsole("📅 SPONTAN-DATUM (HEUTE) EINGELOGGT: " + geburtsDatum);
+                    logToConsole("📅 SPONTAN-DATUM (HEUTE): " + geburtsDatum);
                 } 
                 else {
                     const zahlen = findeZahlen(nachAlso);
                     if (zahlen.length >= 2) {
                         geburtsTag = zahlen[0];
                         geburtsMonat = zahlen[1];
-                        if (geburtsTag >= 1 && geburtsTag <= 31 && geburtsMonat >= 1 && geburtsMonat <= 12) {
-                            geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                            logToConsole("📅 DATUM: " + geburtsDatum);
-                        } else {
-                            logToConsole("⚠️ DATUM UNGÜLTIG: " + geburtsTag + "." + geburtsMonat);
-                            geburtsTag = null; geburtsMonat = null;
-                        }
-                    } else {
-                        logToConsole("⚠️ NACH „ALSO“ WENIGER ALS 2 TRAGFÄHIGE ELEMENTE ERKANNT");
+                        geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
+                        logToConsole("📅 DATUM: " + geburtsDatum);
                     }
                 }
             }
 
             if (text.includes("verdeckt")) {
                 phase = 4;
-                logToConsole("🛑 „VERDECKT“ ERKANNT");
-                logToConsole("🎤 SPRACHERKENNUNG WIRD BEENDET");
+                logToConsole("🛑 „VERDECKT“ ERKANNT -> TRICK BEENDET");
 
                 const heute = new Date();
-                const heuteTag = heute.getDate();
-                const heuteMonat = heute.getMonth() + 1;
-                istGeburtstag = geburtsTag === heuteTag && geburtsMonat === heuteMonat;
+                istGeburtstag = geburtsTag === heute.getDate() && geburtsMonat === (heute.getMonth() + 1);
 
                 logToConsole("--------------------------------");
                 logToConsole("ERGEBNIS");
                 logToConsole("FARBE: " + kartenFarbe);
                 logToConsole("WERT: " + kartenWert);
-                logToConsole("NAME: " + (zuschauerName || "(kein Name erkannt)"));
-                logToConsole("DATUM: " + (geburtsDatum || "(kein Datum erkannt)"));
+                logToConsole("NAME: " + (zuschauerName || "(kein Name)"));
+                logToConsole("DATUM: " + (geburtsDatum || "(kein Datum)"));
                 logToConsole("GEBURTSTAG: " + (istGeburtstag ? "JA 🎂" : "NEIN"));
                 logToConsole("--------------------------------");
                 recognition.stop();
@@ -281,74 +260,28 @@ if (!SpeechRecognition) {
         }
     }
 
-    /* =====================================================
-       DER UNZERSTÖRBARE MOBIL-RESET-RESTART-HEBEL (ANTI-LOOP)
-       ===================================================== */
-    let neustartTimer = null;
-    let istAmStarten = false;
-
+    /* GESTERNS GEÖLTER WECHSELSTROM-RESTART FÜR ANDROID */
     recognition.onend = () => {
         logToConsole("⏹️ SPRACHERKENNUNG BEENDET");
-
         if (phase < 4) {
-            logToConsole("⏳ MOBILER RESET-RESTART: Reinige Browser-RAM...");
-            
-            if (neustartTimer) { clearTimeout(neustartTimer); }
-
-            neustartTimer = setTimeout(() => {
+            logToConsole("⚡ MOBIL-WECHSELSTROM: Reanimme Ohr...");
+            setTimeout(() => {
                 try {
-                    // Der absolute Befreiungsschlag: Wir brechen alle hängengebliebenen
-                    // Geister-Sitzungen im Android-Browser unbarmherzig ab!
-                    recognition.abort();
-                    
-                    // Kleine, unmerkliche Atempause für das Samsung-System zum Saubermachen
-                    setTimeout(() => {
-                        if (istAmStarten) return;
-                        try {
-                            istAmStarten = true;
-                            // Wir setzen den Resultat-Zähler für die frische Sitzung zurück auf Null
-                            verarbeitetesResultat = 0; 
-                            
-                            recognition.start();
-                            logToConsole("⚡ MIKROFON BLITZSAUBER REANIMIERT!");
-                            setTimeout(() => { istAmStarten = false; }, 400);
-                        } catch(e2) {
-                            istAmStarten = false;
-                        }
-                    }, 200);
-
-                } catch (e) {
-                    logToConsole("❌ NEUSTARTFEHLER: " + e.message);
-                    istAmStarten = false;
-                }
-            }, 500); // Der goldene 500ms-Sicherheitspuffer für das Samsung S26
-        } else {
-            logToConsole("💎 PHASE 4 ERREICHT: Mikrofon schläft planmäßig ein.");
+                    verarbeitetesResultat = 0; 
+                    recognition.start();
+                    logToConsole("🎤 STUMMES OHR AUF EMPFANG!");
+                } catch (e) {}
+            }, 250); 
         }
     };
 
-    /* =====================================================
-       GIGANTISCHES MOBIL-HEBEL FÜR ANDROID (KONTROLLIERTER FLUSS)
-       ===================================================== */
-    recognition.continuous = false; // FELSENFEST AUF FALSE! Zwingt das Handy zur sauberen Übergabe!
-    recognition.interimResults = false;
-
-    // Haupt-Startbefehl beim allerersten Laden der Seite
-    try {
-        recognition.start();
-    } catch(e) {
-        logToConsole("⚠️ Erster Start fehlgeschlagen: " + e.message);
-    }
+    try { recognition.start(); } catch(e) {}
 }
 
-/* NOT-AUS (3 Sek oben links gedrückt halten) */
+/* NOT-AUS */
 let exitTimer = null;
-document.getElementById("emergency-exit").addEventListener("touchstart", () => {
-    exitTimer = setTimeout(() => { location.reload(); }, 3000);
-});
+document.getElementById("emergency-exit").addEventListener("touchstart", () => { exitTimer = setTimeout(() => { location.reload(); }, 3000); });
 document.getElementById("emergency-exit").addEventListener("touchend", () => { clearTimeout(exitTimer); });
-
 </script>
 </body>
 </html>
-
