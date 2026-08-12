@@ -281,20 +281,61 @@ if (!SpeechRecognition) {
         }
     }
 
+    /* =====================================================
+       DER UNZERSTÖRBARE MOBIL-PUFFER-RESTART WITH ANTI-LOOP
+       ===================================================== */
+    let istAmNeustarten = false;
+    let neustartTimer = null;
+
     recognition.onend = () => {
         logToConsole("⏹️ SPRACHERKENNUNG BEENDET");
+
         if (phase < 4) {
-            logToConsole("⚡ MOBIL-WECHSELSTROM: Starte frische Sitzung...");
-            setTimeout(() => {
+            // ANTI-LOOP-RIEGEL: Wenn bereits ein Neustart läuft, blockieren wir jeden weiteren Versuch!
+            if (istAmNeustarten) {
+                logToConsole("🛡️ ANTI-LOOP AKTIV: Blockiere nervöses Dauerklicken...");
+                return;
+            }
+
+            istAmNeustarten = true;
+            logToConsole("⏳ MOBILER PUFFER-RESTART: Zwinge RAM zum Atmen...");
+            
+            if (neustartTimer) { clearTimeout(neustartTimer); }
+
+            neustartTimer = setTimeout(() => {
                 try {
-                    verarbeitetesResultat = 0; 
-                    recognition.start();
-                    logToConsole("🎤 STUMMES OHR WIEDER AUF EMPFANG!");
-                } catch (e) {}
-            }, 250); 
+                    // Wir brechen alte, hängengebliebene Geister-Sitzungen im Android-Browser radikal ab
+                    recognition.abort();
+                    
+                    setTimeout(() => {
+                        try {
+                            recognition.start();
+                            logToConsole("⚡ MIKROFON ERFOLGREICH REANIMIERT!");
+                            
+                            // Erst nach dem erfolgreichen Start machen wir den Weg für zukünftige Restarts wieder frei
+                            setTimeout(() => { istAmNeustarten = false; }, 500);
+                        } catch (e2) {
+                            istAmNeustarten = false; // Falls es schon läuft, Pforte frei
+                        }
+                    }, 150);
+
+                } catch (e) {
+                    logToConsole("❌ NEUSTARTFEHLER: " + e.message);
+                    istAmNeustarten = false;
+                }
+            }, 600); // Der goldene 600ms-Sicherheitspuffer für das Samsung S26
+        } else {
+            logToConsole("💎 PHASE 4 ERREICHT: Mikrofon schläft planmäßig ein.");
         }
     };
 
+    /* =====================================================
+       GIGANTISCHES MOBIL-HEBEL FÜR ANDROID (OBEN RECHTS)
+       ===================================================== */
+    recognition.continuous = true; // Wieder auf true, damit das S26 im Fluss lauscht!
+    recognition.interimResults = false;
+
+    // Haupt-Startbefehl beim allerersten Laden der Seite
     try {
         recognition.start();
     } catch(e) {
@@ -302,6 +343,7 @@ if (!SpeechRecognition) {
     }
 }
 
+/* NOT-AUS (3 Sek oben links gedrückt halten) */
 let exitTimer = null;
 document.getElementById("emergency-exit").addEventListener("touchstart", () => {
     exitTimer = setTimeout(() => { location.reload(); }, 3000);
