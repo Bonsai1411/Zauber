@@ -219,23 +219,51 @@ if (!SpeechRecognition) {
             return;
         }
 
+        /* PHASE 3: NAME + DATUM (Hochgradig gegen Testausfälle gehärtet!) */
         if (phase === 3) {
+            
+            /* =====================================================
+               🚀 DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG (PRIORITÄT 1!)
+               Falls das Datum zickt, bricht das Wort "verdeckt" den Trick trotzdem SOFORT ab!
+               ===================================================== */
+            if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
+                phase = 4;
+                logToConsole("🛑 ABSCHLUSS-SIGNAL ERKANNT -> TRICK BEENDET");
+
+                const heute = new Date();
+                istGeburtstag = geburtsTag === heute.getDate() && geburtsMonat === (heute.getMonth() + 1);
+
+                logToConsole("--------------------------------");
+                logToConsole("ERGEBNIS");
+                logToConsole("FARBE: " + kartenFarbe);
+                logToConsole("WERT: " + kartenWert);
+                logToConsole("NAME: " + (zuschauerName || "(kein Name erkannt)"));
+                logToConsole("DATUM: " + (geburtsDatum || "(kein Datum erkannt)"));
+                logToConsole("GEBURTSTAG: " + (istGeburtstag ? "JA 🎂" : "NEIN"));
+                logToConsole("--------------------------------");
+                
+                // Wir schalten alle Triebwerke im RAM unbarmherzig aus!
+                recognition.stop();
+                return;
+            }
+
+            /* --- NAME AUSLESEN --- */
             const datumPosition = text.indexOf("dein datum");
             if (datumPosition > 0 && zuschauerName === "") {
                 let nameTeil = text.substring(0, datumPosition).trim();
                 nameTeil = nameTeil.replace(/^[,.:;!? ]+|[,.:;!? ]+\$/g, "");
                 if (nameTeil.toLowerCase() !== "name" && nameTeil !== "") {
                     zuschauerName = nameTeil.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-                    logToConsole("👤 NAME: " + zuschauerName);
+                    logToConsole("👤 NAME DETEKTIERT: " + zuschauerName);
                 }
             }
 
+            /* --- DATUM AUSLESEN --- */
             const alsoPosition = text.indexOf("also");
             if (alsoPosition !== -1 && geburtsTag === null) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
 
-                /* DER "HEUTE"-SPEZIALTRIGGER FÜR DIE BÜHNE */
-                if (nachAlso.includes("heute") || text.includes("ist also heute")) {
+                if (nachAlso.includes("heute") || text.includes("ist heute") || text.includes("ist also heute")) {
                     const echtzeitUhr = new Date();
                     geburtsTag = echtzeitUhr.getDate();
                     geburtsMonat = echtzeitUhr.getMonth() + 1;
@@ -248,10 +276,13 @@ if (!SpeechRecognition) {
                         geburtsTag = zahlen[0];
                         geburtsMonat = zahlen[1];
                         geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                        logToConsole("📅 DATUM: " + geburtsDatum);
+                        logToConsole("📅 DATUM MATCHED: " + geburtsDatum);
                     }
                 }
             }
+            return;
+        }
+}
 
             if (text.includes("verdeckt")) {
                 phase = 4;
