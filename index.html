@@ -22,25 +22,17 @@
         height: 25%;
         z-index: 99999;
     }
-    #debug-trigger {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 25%;
-        height: 25%;
-        z-index: 99999;
-        background: transparent;
-    }
+    /* DIE ZAHME DEBUG-KONSOLE: Schießt nicht mehr wild nach unten! */
     #debug-console {
         display: block;
         position: fixed;
         bottom: 10px;
         left: 10px;
         right: 10px;
-        height: 55%;
+        height: 85%;
         box-sizing: border-box;
         background: #0a0a0a;
-        color: #444;
+        color: #aaa;
         font-family: monospace;
         font-size: 13px;
         padding: 10px;
@@ -55,7 +47,7 @@
         width: 100%;
         height: 100%;
         background-color: #000;
-        opacity: 0.995;
+        opacity: 0.0; /* Im Testmodus transparent, damit wir alles sehen! */
         pointer-events: none;
         z-index: 88888;
     }
@@ -64,11 +56,10 @@
 <body>
 
 <div id="emergency-exit"></div>
-<div id="debug-trigger"></div>
 <div id="tarnkappe"></div>
 
 <div id="debug-console">
-    --- DIGITALE DIMMUNG AKTIV ---<br>
+    --- DESIGNSTUFE: ANALYSE-MODUS AKTIV ---<br>
     Warte auf „Zusammen“...
 </div>
 
@@ -82,13 +73,27 @@ let geburtsMonat = null;
 let geburtsDatum = "";
 let istGeburtstag = false;
 let verarbeitetesResultat = 0;
+let benutzerScrollt = false; // Das goldene Schutzschild-Zahnrad!
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const consoleDiv = document.getElementById("debug-console");
 
+// Erkennt, ob Sie händisch nach oben wischen, um den Auto-Scroll einzufrieren!
+consoleDiv.addEventListener('scroll', () => {
+    // Wenn Sie mehr als 20 Pixel vom unteren Rand entfernt sind, frieren wir den Scroll ein
+    if (consoleDiv.scrollHeight - consoleDiv.scrollTop > consoleDiv.clientHeight + 20) {
+        benutzerScrollt = true;
+    } else {
+        benutzerScrollt = false;
+    }
+});
+
 function logToConsole(text) {
     consoleDiv.innerHTML += "<br>" + text;
-    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    // Nur nach unten springen, wenn Sie NICHT gerade oben am Lesen sind!
+    if (!benutzerScrollt) {
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
 }
 
 const deutscheZahlen = {
@@ -132,22 +137,23 @@ if (!SpeechRecognition) {
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
-    recognition.continuous = false; // Zwingt Android zur sauberen, legalen Ergebnisübergabe
+    recognition.continuous = false; 
     recognition.interimResults = false;
 
-    recognition.onstart = () => { logToConsole("🎤 SPRACHERKENNUNG GESTARTET"); };
-    recognition.onaudiostart = () => { logToConsole("🎧 MIKROFON / AUDIO AKTIV"); };
-    recognition.onspeechstart = () => { logToConsole("🗣️ SPRACHE ERKANNT"); };
+    // Diese Events loggen wir nicht mehr, damit die Konsole absolut sauber bleibt!
+    recognition.onstart = () => {};
+    recognition.onaudiostart = () => {};
+    recognition.onspeechstart = () => {};
 
     recognition.onerror = (event) => {
-        logToConsole("❌ SPRACHFEHLER: " + event.error);
+        // Fehler werden lautlos geschluckt, um den Textfluss nicht zu stören
     };
 
     recognition.onresult = (event) => {
         for (let i = verarbeitetesResultat; i < event.results.length; i++) {
             const result = event.results[i];
-            if (!result || !result[0]) { continue; }
-            let roherText = result[0].transcript.toLowerCase().trim();
+            if (!result || !result) { continue; }
+            let roherText = result.transcript.toLowerCase().trim();
             if (!roherText) { continue; }
             verarbeitetesResultat = i + 1;
 
@@ -252,8 +258,8 @@ if (!SpeechRecognition) {
                 else {
                     const zahlen = findeZahlen(nachAlso);
                     if (zahlen.length >= 2) {
-                        geburtsTag = zahlen[0];
-                        geburtsMonat = zahlen[1];
+                        geburtsTag = zahlen;
+                        geburtsMonat = zahlen;
                         geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
                         logToConsole("📅 DATUM MATCHED: " + geburtsDatum);
                     }
@@ -263,46 +269,29 @@ if (!SpeechRecognition) {
         }
     }
 
-    /* =====================================================
-       DIE EISERNE UNBIEGSAME ANTILOOP-SCHRANKE
-       ===================================================== */
+    /* WECHSELSTROM-RESTART FÜR ANDROID (OHNE TEXT-BALLAST) */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
     recognition.onend = () => {
-        logToConsole("⏹️ SPRACHERKENNUNG BEENDET");
-        
         if (phase < 4) {
-            // Falls das S26 Amok läuft, riegelt dieser Schalter die Datenleitung SOFORT ab!
-            if (antiLoopSperre) {
-                logToConsole("🛡️ SCHUTZSCHILD AKTIV: Blockiere Geister-Schleife...");
-                return;
-            }
-
+            if (antiLoopSperre) { return; }
             antiLoopSperre = true;
-            logToConsole("⏳ EISERNE SCHRANKE: Erzwinge Atempause für Android...");
-            
             if (neustartTimer) { clearTimeout(neustartTimer); }
-
             neustartTimer = setTimeout(() => {
                 try {
                     verarbeitetesResultat = 0; 
                     recognition.start();
-                    logToConsole("🎤 STUMMES OHR WIEDER AUF EMPFANG!");
-                    
-                    // Erst nach einer vollen Sekunde machen wir den Weg für den nächsten Restart frei!
                     setTimeout(() => { antiLoopSperre = false; }, 1000);
-                } catch (e) {
-                    antiLoopSperre = false;
-                }
-            }, 800); // 800ms unknackbarer Puffer für das Samsung S26
+                } catch (e) { antiLoopSperre = false; }
+            }, 800);
         }
     };
 
     try { recognition.start(); } catch(e) {}
 }
 
-/* NOT-AUS */
+/* NOT-AUS (3 Sek oben links gedrückt halten zum Neuladen) */
 let exitTimer = null;
 document.getElementById("emergency-exit").addEventListener("touchstart", () => { exitTimer = setTimeout(() => { location.reload(); }, 3000); });
 document.getElementById("emergency-exit").addEventListener("touchend", () => { clearTimeout(exitTimer); });
