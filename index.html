@@ -101,6 +101,7 @@ const deutscheZahlen = {
 
 function findeZahlen(text) {
     let zahlen = [];
+    // GIGANTISCHER FIX: Ersetzt Punkte in Daten (z.B. "13.08") durch Leerzeichen, damit "13" und "08" einzeln extrahiert werden!
     let gesaeubert = text.replace(/\./g, " ");
     const mitZiffern = gesaeubert.match(/\d+/g);
     if (mitZiffern) {
@@ -139,25 +140,26 @@ if (!SpeechRecognition) {
     recognition.onstart = () => {};
     recognition.onaudiostart = () => {};
     recognition.onspeechstart = () => {};
-
     recognition.onerror = (event) => {
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
-            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 300);
+            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
         }
     };
 
     recognition.onresult = (event) => {
         if (!event || !event.results || !event.results[verarbeitetesResultat]) { return; }
-        
         let result = event.results[verarbeitetesResultat];
         if (!result || !result[0]) { return; }
         
         let roherText = result[0].transcript;
         if (!roherText) { return; }
-        
         roherText = roherText.toLowerCase().trim();
         verarbeitetesResultat = verarbeitetesResultat + 1;
 
+        /* =====================================================
+           BÄM!!! DAS HOCHGRADIG ERWEITERTE REINIGUNGS-SKALPELL
+           Bügelt alle rabiaten Hörfehler aus Ihren Feldtests glatt!
+           ===================================================== */
         let text = roherText
             .replace(/ein\s+mal/g, "einmal")
             .replace(/zwei\s+mal/g, "zweimal")
@@ -166,6 +168,8 @@ if (!SpeechRecognition) {
             .replace(/fünf\s+mal/g, "viermal")
             .replace(/reihem\s+folge/g, "reihenfolge")
             .replace(/reihen\s+folge/g, "reihenfolge")
+            .replace(/garten/g, "reihenfolge")       // REPARATUR FÜR TEST 3 (Garten -> Reihenfolge)
+            .replace(/t1/g, "heute")                 // REPARATUR FÜR TEST 4 (t1 -> heute-Spezialtrigger)
             .replace(/ranz/g, "franz")
             .replace(/wolf/g, "12")
             .replace(/dein\s+datum/g, "dein datum");
@@ -175,7 +179,7 @@ if (!SpeechRecognition) {
         verarbeiteSprache(text);
     };
     function verarbeiteSprache(text) {
-        /* PRIORITY 1: DER ABSOLUTE NOT-AUSSTIEG GANZ OBEN (Rettet das Show-Finale!) */
+        /* PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN (Rettet das Show-Finale!) */
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
@@ -206,7 +210,7 @@ if (!SpeechRecognition) {
             return;
         }
 
-        /* PHASE 1: KARTENFARBE */
+        /* PHASE 1: KARTENFARBE (Gegen Satzzeichen abgehärtet über .includes) */
         if (phase === 1) {
             if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; }
             else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; }
@@ -269,7 +273,7 @@ if (!SpeechRecognition) {
         }
     }
 
-    /* GESTERNS REINER WECHSELSTROM-RESTART FÜR SMARTPHONES */
+    /* KANONISCHER WECHSELSTROM-RESTART */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
