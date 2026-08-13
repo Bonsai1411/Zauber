@@ -22,7 +22,6 @@
         height: 25%;
         z-index: 99999;
     }
-    /* DIE ZAHME DEBUG-KONSOLE: Schießt nicht mehr wild nach unten! */
     #debug-console {
         display: block;
         position: fixed;
@@ -47,7 +46,7 @@
         width: 100%;
         height: 100%;
         background-color: #000;
-        opacity: 0.0; /* Im Testmodus transparent, damit wir alles sehen! */
+        opacity: 0.0;
         pointer-events: none;
         z-index: 88888;
     }
@@ -73,14 +72,12 @@ let geburtsMonat = null;
 let geburtsDatum = "";
 let istGeburtstag = false;
 let verarbeitetesResultat = 0;
-let benutzerScrollt = false; // Das goldene Schutzschild-Zahnrad!
+let benutzerScrollt = false;
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const consoleDiv = document.getElementById("debug-console");
 
-// Erkennt, ob Sie händisch nach oben wischen, um den Auto-Scroll einzufrieren!
 consoleDiv.addEventListener('scroll', () => {
-    // Wenn Sie mehr als 20 Pixel vom unteren Rand entfernt sind, frieren wir den Scroll ein
     if (consoleDiv.scrollHeight - consoleDiv.scrollTop > consoleDiv.clientHeight + 20) {
         benutzerScrollt = true;
     } else {
@@ -90,7 +87,6 @@ consoleDiv.addEventListener('scroll', () => {
 
 function logToConsole(text) {
     consoleDiv.innerHTML += "<br>" + text;
-    // Nur nach unten springen, wenn Sie NICHT gerade oben am Lesen sind!
     if (!benutzerScrollt) {
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
     }
@@ -140,49 +136,46 @@ if (!SpeechRecognition) {
     recognition.continuous = false; 
     recognition.interimResults = false;
 
-    // RE-ZÜNDUNG: Die Funktionen laufen wieder aktiv, spucken aber keinen Text-Müll mehr aus!
-    recognition.onstart = () => { consoleDiv.innerHTML += "<br>🎙️ OHR AKTIVIRT - WARTE AUF ETWAS GEHÖRTES..."; };
+    recognition.onstart = () => {};
     recognition.onaudiostart = () => {};
     recognition.onspeechstart = () => {};
 
     recognition.onerror = (event) => {
-        // Timeouts fangen wir geräuschlos ab und starten das Ohr pfeilschnell neu!
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
-            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
+            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 300);
         }
-    };
-
-    recognition.onerror = (event) => {
-        // Fehler werden lautlos geschluckt, um den Textfluss nicht zu stören
     };
 
     recognition.onresult = (event) => {
-        for (let i = verarbeitetesResultat; i < event.results.length; i++) {
-            const result = event.results[i];
-            if (!result || !result) { continue; }
-            let roherText = result.transcript.toLowerCase().trim();
-            if (!roherText) { continue; }
-            verarbeitetesResultat = i + 1;
+        if (!event || !event.results || !event.results[verarbeitetesResultat]) { return; }
+        
+        let result = event.results[verarbeitetesResultat];
+        if (!result || !result[0]) { return; }
+        
+        let roherText = result[0].transcript;
+        if (!roherText) { return; }
+        
+        roherText = roherText.toLowerCase().trim();
+        verarbeitetesResultat = verarbeitetesResultat + 1;
 
-            let text = roherText
-                .replace(/ein\s+mal/g, "einmal")
-                .replace(/zwei\s+mal/g, "zweimal")
-                .replace(/drei\s+mal/g, "dreimal")
-                .replace(/vier\s+mal/g, "viermal")
-                .replace(/fünf\s+mal/g, "viermal")
-                .replace(/reihem\s+folge/g, "reihenfolge")
-                .replace(/reihen\s+folge/g, "reihenfolge")
-                .replace(/ranz/g, "franz")
-                .replace(/wolf/g, "12")
-                .replace(/dein\s+datum/g, "dein datum");
+        let text = roherText
+            .replace(/ein\s+mal/g, "einmal")
+            .replace(/zwei\s+mal/g, "zweimal")
+            .replace(/drei\s+mal/g, "dreimal")
+            .replace(/vier\s+mal/g, "viermal")
+            .replace(/fünf\s+mal/g, "viermal")
+            .replace(/reihem\s+folge/g, "reihenfolge")
+            .replace(/reihen\s+folge/g, "reihenfolge")
+            .replace(/ranz/g, "franz")
+            .replace(/wolf/g, "12")
+            .replace(/dein\s+datum/g, "dein datum");
 
-            logToConsole("📝 GEHÖRT: „" + roherText + "“");
-            if (roherText !== text) { logToConsole("✨ GEBÜGELT: „" + text + "“"); }
-            verarbeiteSprache(text);
-        }
+        logToConsole("📝 GEHÖRT: „" + roherText + "“");
+        if (roherText !== text) { logToConsole("✨ GEBÜGELT: „" + text + "“"); }
+        verarbeiteSprache(text);
     };
     function verarbeiteSprache(text) {
-        /* PHASE 3 PRIORITY 1: DER ABSOLUTE NOT-AUSSTIEG GANZ OBEN */
+        /* PRIORITY 1: DER ABSOLUTE NOT-AUSSTIEG GANZ OBEN (Rettet das Show-Finale!) */
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
@@ -265,8 +258,8 @@ if (!SpeechRecognition) {
                 else {
                     const zahlen = findeZahlen(nachAlso);
                     if (zahlen.length >= 2) {
-                        geburtsTag = zahlen;
-                        geburtsMonat = zahlen;
+                        geburtsTag = zahlen[0];
+                        geburtsMonat = zahlen[1];
                         geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
                         logToConsole("📅 DATUM MATCHED: " + geburtsDatum);
                     }
@@ -276,7 +269,7 @@ if (!SpeechRecognition) {
         }
     }
 
-    /* WECHSELSTROM-RESTART FÜR ANDROID (OHNE TEXT-BALLAST) */
+    /* GESTERNS REINER WECHSELSTROM-RESTART FÜR SMARTPHONES */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
