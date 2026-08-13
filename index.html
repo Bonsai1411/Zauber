@@ -140,10 +140,17 @@ if (!SpeechRecognition) {
     recognition.continuous = false; 
     recognition.interimResults = false;
 
-    // Diese Events loggen wir nicht mehr, damit die Konsole absolut sauber bleibt!
-    recognition.onstart = () => {};
+    // RE-ZÜNDUNG: Die Funktionen laufen wieder aktiv, spucken aber keinen Text-Müll mehr aus!
+    recognition.onstart = () => { consoleDiv.innerHTML += "<br>🎙️ OHR AKTIVIRT - WARTE AUF ETWAS GEHÖRTES..."; };
     recognition.onaudiostart = () => {};
     recognition.onspeechstart = () => {};
+
+    recognition.onerror = (event) => {
+        // Timeouts fangen wir geräuschlos ab und starten das Ohr pfeilschnell neu!
+        if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
+            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
+        }
+    };
 
     recognition.onerror = (event) => {
         // Fehler werden lautlos geschluckt, um den Textfluss nicht zu stören
