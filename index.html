@@ -132,7 +132,7 @@ if (!SpeechRecognition) {
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
-    recognition.continuous = false; 
+    recognition.continuous = false; // Zwingt Android zur sauberen, legalen Ergebnisübergabe
     recognition.interimResults = false;
 
     recognition.onstart = () => { logToConsole("🎤 SPRACHERKENNUNG GESTARTET"); };
@@ -141,16 +141,13 @@ if (!SpeechRecognition) {
 
     recognition.onerror = (event) => {
         logToConsole("❌ SPRACHFEHLER: " + event.error);
-        if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
-            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
-        }
     };
 
     recognition.onresult = (event) => {
         for (let i = verarbeitetesResultat; i < event.results.length; i++) {
             const result = event.results[i];
-            if (!result || !result) { continue; }
-            let roherText = result.transcript.toLowerCase().trim();
+            if (!result || !result[0]) { continue; }
+            let roherText = result[0].transcript.toLowerCase().trim();
             if (!roherText) { continue; }
             verarbeitetesResultat = i + 1;
 
@@ -172,50 +169,8 @@ if (!SpeechRecognition) {
         }
     };
     function verarbeiteSprache(text) {
-        /* PHASE 0: ZUSAMMEN */
-        if (phase === 0) {
-            if (text.includes("zusammen")) {
-                phase = 1;
-                logToConsole("▶️ „ZUSAMMEN“ ERKANNT -> PHASE 1");
-                logToConsole("🔄 RAM-REFRESH FÜR DIE NÄCHSTE PHASE...");
-                recognition.abort(); 
-            }
-            return;
-        }
-
-        /* PHASE 1: KARTENFARBE */
-        if (phase === 1) {
-            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; }
-            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; }
-            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; }
-            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; }
-
-            if (kartenFarbe !== "") {
-                phase = 2;
-                logToConsole("🃏 FARBE: " + kartenFarbe + " -> PHASE 2");
-                logToConsole("🔄 RAM-REFRESH FÜR DIE NÄCHSTE PHASE...");
-                recognition.abort();
-            }
-            return;
-        }
-
-        /* PHASE 2: CODEWÖRTER */
-        if (phase === 2) {
-            if (text.includes("reihenfolge")) {
-                verarbeiteCodewoerter(text);
-                phase = 3;
-                logToConsole("🔒 „REIHENFOLGE“ -> KARTENWERT: " + kartenWert + " -> PHASE 3");
-                logToConsole("🔄 RAM-REFRESH FÜR DIE NÄCHSTE PHASE...");
-                recognition.abort();
-                return;
-            }
-            verarbeiteCodewoerter(text);
-            return;
-        }
-
-        /* PHASE 3: NAME + DATUM */
+        /* PHASE 3 PRIORITY 1: DER ABSOLUTE NOT-AUSSTIEG GANZ OBEN */
         if (phase === 3) {
-            /* PRIORITY 1: DER ULTIMATIVE BÜHNEN-NOT-AUSSTIEG (Zerschmettert den Verdeckt-Ausfall) */
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
                 logToConsole("🛑 ABSCHLUSS-SIGNAL ERKANNT -> TRICK BEENDET");
@@ -234,8 +189,45 @@ if (!SpeechRecognition) {
                 recognition.stop();
                 return;
             }
+        }
 
-            /* NAME AUSLESEN */
+        /* PHASE 0: ZUSAMMEN */
+        if (phase === 0) {
+            if (text.includes("zusammen")) {
+                phase = 1;
+                logToConsole("▶️ „ZUSAMMEN“ ERKANNT -> PHASE 1");
+            }
+            return;
+        }
+
+        /* PHASE 1: KARTENFARBE */
+        if (phase === 1) {
+            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; }
+            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; }
+            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; }
+            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; }
+
+            if (kartenFarbe !== "") {
+                phase = 2;
+                logToConsole("🃏 FARBE: " + kartenFarbe + " -> PHASE 2");
+            }
+            return;
+        }
+
+        /* PHASE 2: CODEWÖRTER */
+        if (phase === 2) {
+            if (text.includes("reihenfolge")) {
+                verarbeiteCodewoerter(text);
+                phase = 3;
+                logToConsole("🔒 „REIHENFOLGE“ -> KARTENWERT: " + kartenWert + " -> PHASE 3");
+                return;
+            }
+            verarbeiteCodewoerter(text);
+            return;
+        }
+
+        /* PHASE 3: NAME + DATUM */
+        if (phase === 3) {
             const datumPosition = text.indexOf("dein datum");
             if (datumPosition > 0 && zuschauerName === "") {
                 let nameTeil = text.substring(0, datumPosition).trim();
@@ -246,7 +238,6 @@ if (!SpeechRecognition) {
                 }
             }
 
-            /* DATUM AUSLESEN */
             const alsoPosition = text.indexOf("also");
             if (alsoPosition !== -1 && geburtsTag === null) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
@@ -272,25 +263,46 @@ if (!SpeechRecognition) {
         }
     }
 
-    /* MOBIL-WECHSELSTROM-RESTART WITH RE-ZÜNDUNG */
+    /* =====================================================
+       DIE EISERNE UNBIEGSAME ANTILOOP-SCHRANKE
+       ===================================================== */
+    let neustartTimer = null;
+    let antiLoopSperre = false;
+
     recognition.onend = () => {
         logToConsole("⏹️ SPRACHERKENNUNG BEENDET");
+        
         if (phase < 4) {
-            logToConsole("⚡ MOBIL-WECHSELSTROM: Reanimiere Ohr...");
-            setTimeout(() => {
+            // Falls das S26 Amok läuft, riegelt dieser Schalter die Datenleitung SOFORT ab!
+            if (antiLoopSperre) {
+                logToConsole("🛡️ SCHUTZSCHILD AKTIV: Blockiere Geister-Schleife...");
+                return;
+            }
+
+            antiLoopSperre = true;
+            logToConsole("⏳ EISERNE SCHRANKE: Erzwinge Atempause für Android...");
+            
+            if (neustartTimer) { clearTimeout(neustartTimer); }
+
+            neustartTimer = setTimeout(() => {
                 try {
                     verarbeitetesResultat = 0; 
                     recognition.start();
-                    logToConsole("🎤 STUMMES OHR AUF EMPFANG!");
-                } catch (e) {}
-            }, 250); 
+                    logToConsole("🎤 STUMMES OHR WIEDER AUF EMPFANG!");
+                    
+                    // Erst nach einer vollen Sekunde machen wir den Weg für den nächsten Restart frei!
+                    setTimeout(() => { antiLoopSperre = false; }, 1000);
+                } catch (e) {
+                    antiLoopSperre = false;
+                }
+            }, 800); // 800ms unknackbarer Puffer für das Samsung S26
         }
     };
 
     try { recognition.start(); } catch(e) {}
 }
 
-/* NOT-AUS (3 Sek oben links gedrückt halten) */
+/* NOT-AUS */
 let exitTimer = null;
 document.getElementById("emergency-exit").addEventListener("touchstart", () => { exitTimer = setTimeout(() => { location.reload(); }, 3000); });
 document.getElementById("emergency-exit").addEventListener("touchend", () => { clearTimeout(exitTimer); });
