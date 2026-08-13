@@ -91,7 +91,6 @@ function logToConsole(text) {
     consoleDiv.scrollTop = consoleDiv.scrollHeight;
 }
 
-// Die gestraffte, pfeilschnelle Ur-Schublade von gestern
 const deutscheZahlen = {
     "null": 0, "eins": 1, "ein": 1, "zwei": 2, "drei": 3, "vier": 4, "fünf": 5, "funf": 5, "sechs": 6, "sieben": 7, "acht": 8, "neun": 9,
     "zehn": 10, "elf": 11, "zwölf": 12, "zwolf": 12, "dreizehn": 13, "vierzehn": 14, "fünfzehn": 15, "funfzehn": 15, "sechzehn": 16, "siebzehn": 17, "achtzehn": 18, "neunzehn": 19,
@@ -100,15 +99,16 @@ const deutscheZahlen = {
 };
 
 function findeZahlen(text) {
-    const zahlen = [];
-    const mitZiffern = text.match(/\d+/g);
+    let zahlen = [];
+    let gesaeubert = text.replace(/\./g, " ");
+    const mitZiffern = gesaeubert.match(/\d+/g);
     if (mitZiffern) {
         for (const zahl of mitZiffern) {
             const wert = parseInt(zahl, 10);
             if (!isNaN(wert)) { zahlen.push(wert); }
         }
     }
-    const woerter = text.toLowerCase().replace(/[.,!?;:]/g, " ").split(/\s+/).filter(Boolean);
+    const woerter = gesaeubert.toLowerCase().replace(/[.,!?;:]/g, " ").split(/\s+/).filter(Boolean);
     for (const wort of woerter) {
         if (Object.prototype.hasOwnProperty.call(deutscheZahlen, wort)) {
             zahlen.push(deutscheZahlen[wort]);
@@ -132,7 +132,7 @@ if (!SpeechRecognition) {
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
-    recognition.continuous = false; // GESTERN-MODUS: Zwingt Android zur sauberen Übergabe!
+    recognition.continuous = false; 
     recognition.interimResults = false;
 
     recognition.onstart = () => { logToConsole("🎤 SPRACHERKENNUNG GESTARTET"); };
@@ -149,12 +149,11 @@ if (!SpeechRecognition) {
     recognition.onresult = (event) => {
         for (let i = verarbeitetesResultat; i < event.results.length; i++) {
             const result = event.results[i];
-            if (!result || !result[0]) { continue; }
-            let roherText = result[0].transcript.toLowerCase().trim();
+            if (!result || !result) { continue; }
+            let roherText = result.transcript.toLowerCase().trim();
             if (!roherText) { continue; }
             verarbeitetesResultat = i + 1;
 
-            /* BÄM! DER TEXT-BÜGLER SITZT TRAGFÄHIG DRIN */
             let text = roherText
                 .replace(/ein\s+mal/g, "einmal")
                 .replace(/zwei\s+mal/g, "zweimal")
@@ -163,6 +162,8 @@ if (!SpeechRecognition) {
                 .replace(/fünf\s+mal/g, "viermal")
                 .replace(/reihem\s+folge/g, "reihenfolge")
                 .replace(/reihen\s+folge/g, "reihenfolge")
+                .replace(/ranz/g, "franz")
+                .replace(/wolf/g, "12")
                 .replace(/dein\s+datum/g, "dein datum");
 
             logToConsole("📝 GEHÖRT: „" + roherText + "“");
@@ -170,15 +171,12 @@ if (!SpeechRecognition) {
             verarbeiteSprache(text);
         }
     };
-
-        function verarbeiteSprache(text) {
+    function verarbeiteSprache(text) {
         /* PHASE 0: ZUSAMMEN */
         if (phase === 0) {
             if (text.includes("zusammen")) {
                 phase = 1;
                 logToConsole("▶️ „ZUSAMMEN“ ERKANNT -> PHASE 1");
-                
-                // FRISCHLUFT-ZÜNDUNG: Wir starten das Ohr frisch für die Farbe!
                 logToConsole("🔄 RAM-REFRESH FÜR DIE NÄCHSTE PHASE...");
                 recognition.abort(); 
             }
@@ -195,8 +193,6 @@ if (!SpeechRecognition) {
             if (kartenFarbe !== "") {
                 phase = 2;
                 logToConsole("🃏 FARBE: " + kartenFarbe + " -> PHASE 2");
-                
-                // FRISCHLUFT-ZÜNDUNG: Wir putzen den RAM für die Codewörter!
                 logToConsole("🔄 RAM-REFRESH FÜR DIE NÄCHSTE PHASE...");
                 recognition.abort();
             }
@@ -209,8 +205,6 @@ if (!SpeechRecognition) {
                 verarbeiteCodewoerter(text);
                 phase = 3;
                 logToConsole("🔒 „REIHENFOLGE“ -> KARTENWERT: " + kartenWert + " -> PHASE 3");
-                
-                // FRISCHLUFT-ZÜNDUNG: Das Ohr startet brandneu für Name und Datum!
                 logToConsole("🔄 RAM-REFRESH FÜR DIE NÄCHSTE PHASE...");
                 recognition.abort();
                 return;
@@ -219,13 +213,9 @@ if (!SpeechRecognition) {
             return;
         }
 
-        /* PHASE 3: NAME + DATUM (Hochgradig gegen Testausfälle gehärtet!) */
+        /* PHASE 3: NAME + DATUM */
         if (phase === 3) {
-            
-            /* =====================================================
-               🚀 DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG (PRIORITÄT 1!)
-               Falls das Datum zickt, bricht das Wort "verdeckt" den Trick trotzdem SOFORT ab!
-               ===================================================== */
+            /* PRIORITY 1: DER ULTIMATIVE BÜHNEN-NOT-AUSSTIEG (Zerschmettert den Verdeckt-Ausfall) */
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
                 logToConsole("🛑 ABSCHLUSS-SIGNAL ERKANNT -> TRICK BEENDET");
@@ -241,13 +231,11 @@ if (!SpeechRecognition) {
                 logToConsole("DATUM: " + (geburtsDatum || "(kein Datum erkannt)"));
                 logToConsole("GEBURTSTAG: " + (istGeburtstag ? "JA 🎂" : "NEIN"));
                 logToConsole("--------------------------------");
-                
-                // Wir schalten alle Triebwerke im RAM unbarmherzig aus!
                 recognition.stop();
                 return;
             }
 
-            /* --- NAME AUSLESEN --- */
+            /* NAME AUSLESEN */
             const datumPosition = text.indexOf("dein datum");
             if (datumPosition > 0 && zuschauerName === "") {
                 let nameTeil = text.substring(0, datumPosition).trim();
@@ -258,7 +246,7 @@ if (!SpeechRecognition) {
                 }
             }
 
-            /* --- DATUM AUSLESEN --- */
+            /* DATUM AUSLESEN */
             const alsoPosition = text.indexOf("also");
             if (alsoPosition !== -1 && geburtsTag === null) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
@@ -282,35 +270,13 @@ if (!SpeechRecognition) {
             }
             return;
         }
-}
-
-            if (text.includes("verdeckt")) {
-                phase = 4;
-                logToConsole("🛑 „VERDECKT“ ERKANNT -> TRICK BEENDET");
-
-                const heute = new Date();
-                istGeburtstag = geburtsTag === heute.getDate() && geburtsMonat === (heute.getMonth() + 1);
-
-                logToConsole("--------------------------------");
-                logToConsole("ERGEBNIS");
-                logToConsole("FARBE: " + kartenFarbe);
-                logToConsole("WERT: " + kartenWert);
-                logToConsole("NAME: " + (zuschauerName || "(kein Name)"));
-                logToConsole("DATUM: " + (geburtsDatum || "(kein Datum)"));
-                logToConsole("GEBURTSTAG: " + (istGeburtstag ? "JA 🎂" : "NEIN"));
-                logToConsole("--------------------------------");
-                recognition.stop();
-                return;
-            }
-            return;
-        }
     }
 
-    /* GESTERNS GEÖLTER WECHSELSTROM-RESTART FÜR ANDROID */
+    /* MOBIL-WECHSELSTROM-RESTART WITH RE-ZÜNDUNG */
     recognition.onend = () => {
         logToConsole("⏹️ SPRACHERKENNUNG BEENDET");
         if (phase < 4) {
-            logToConsole("⚡ MOBIL-WECHSELSTROM: Reanimme Ohr...");
+            logToConsole("⚡ MOBIL-WECHSELSTROM: Reanimiere Ohr...");
             setTimeout(() => {
                 try {
                     verarbeitetesResultat = 0; 
@@ -324,7 +290,7 @@ if (!SpeechRecognition) {
     try { recognition.start(); } catch(e) {}
 }
 
-/* NOT-AUS */
+/* NOT-AUS (3 Sek oben links gedrückt halten) */
 let exitTimer = null;
 document.getElementById("emergency-exit").addEventListener("touchstart", () => { exitTimer = setTimeout(() => { location.reload(); }, 3000); });
 document.getElementById("emergency-exit").addEventListener("touchend", () => { clearTimeout(exitTimer); });
