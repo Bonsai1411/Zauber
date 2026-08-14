@@ -22,6 +22,25 @@
         height: 25%;
         z-index: 99999;
     }
+    /* DIE INVISIBLE-KONSOLE: Aktiv für den Code, aber zu 100% unsichtbar fürs Publikum! */
+    #debug-console {
+        display: block;
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        height: 55%;
+        box-sizing: border-box;
+        background: #0a0a0a;
+        color: #444;
+        font-family: monospace;
+        font-size: 13px;
+        padding: 10px;
+        overflow-y: auto;
+        border: 1px solid #1a1a1a;
+        z-index: 55555;
+        visibility: hidden; /* BÄM! Macht die Konsole für die Show unsichtbar! */
+    }
     #show-screen {
         position: fixed;
         top: 0;
@@ -33,11 +52,10 @@
         justify-content: center;
         align-items: center;
         background: #000 !important;
-        z-index: 11111;
+        z-index: 99999;
         opacity: 0;
         transition: opacity 2.5s ease-in-out; /* Butterweiches Kino-Aufglühen */
     }
-    /* BÄM!!! DER UNZERSTÖRBARE MACHTBEFEHL FÜR DAS DISPLAY */
     #show-screen.visible {
         opacity: 1 !important;
     }
@@ -66,6 +84,7 @@
 <body>
 
 <div id="emergency-exit"></div>
+<div id="debug-console">--- DIGITALER KANAL AKTIV ---</div>
 
 <!-- STUMMES SHOW-LAYOUT -->
 <div id="show-screen">
@@ -87,6 +106,14 @@ let istGeburtstag = false;
 let verarbeitetesResultat = 0;
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const consoleDiv = document.getElementById("debug-console");
+
+function logToConsole(text) {
+    if (consoleDiv) {
+        consoleDiv.innerHTML += "<br>" + text;
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+}
 
 const deutscheZahlen = {
     "null": 0, "eins": 1, "ein": 1, "zwei": 2, "drei": 3, "vier": 4, "fünf": 5, "funf": 5, "sechs": 6, "sieben": 7, "acht": 8, "neun": 9,
@@ -164,6 +191,7 @@ if (!SpeechRecognition) {
             .replace(/wolf/g, "12")
             .replace(/dein\s+datum/g, "dein datum");
 
+        logToConsole("📝 GEHÖRT: „" + roherText + "“");
         verarbeitetesResultat = event.results.length;
         verarbeiteSprache(text);
         
@@ -187,7 +215,7 @@ if (!SpeechRecognition) {
                 else if (kartenWert === 13) finalerWertName = "König";
 
                 /* =====================================================
-                   BÄM!!! DIE MAGISCHE SPEKTAKULÄRE INSZENIERUNG ECHTEN TEXTES
+                   BÄM!!! HIER ERWACHT DIE MAGISCHE INSZENIERUNG!
                    ===================================================== */
                 document.getElementById("res-name").innerHTML = "Zuschauer: " + (zuschauerName || "(Gedankenübertragung aktiv)");
                 document.getElementById("res-datum").innerHTML = "Datum: " + (geburtsDatum || "(Mysterium)");
