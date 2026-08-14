@@ -32,16 +32,17 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        background: #000;
+        background: #000 !important;
         z-index: 11111;
         opacity: 0;
         transition: opacity 2.5s ease-in-out; /* Butterweiches Kino-Aufglühen */
     }
+    /* BÄM!!! DER UNZERSTÖRBARE MACHTBEFEHL FÜR DAS DISPLAY */
     #show-screen.visible {
-        opacity: 1;
+        opacity: 1 !important;
     }
     .magic-text {
-        color: #fff;
+        color: #fff !important;
         font-size: 24px;
         text-shadow: 0 0 10px rgba(255,255,255,0.4);
         margin: 15px 0;
@@ -49,7 +50,7 @@
         text-align: center;
     }
     .magic-card {
-        color: #e50914; /* Mörderisch scharfes Herz/Karo-Rot */
+        color: #e50914 !important; /* Mörderisch scharfes Herz/Karo-Rot */
         font-size: 52px;
         font-weight: bold;
         text-shadow: 0 0 25px rgba(229,9,20,0.8);
@@ -57,7 +58,7 @@
         letter-spacing: 4px;
     }
     .black-card {
-        color: #fff;
+        color: #fff !important;
         text-shadow: 0 0 25px rgba(255,255,255,0.8);
     }
 </style>
@@ -66,12 +67,12 @@
 
 <div id="emergency-exit"></div>
 
-<!-- STUMMES SHOW-LAYOUT: Erwacht erst beim Wort "Verdeckt" aus dem Pechschwarz -->
+<!-- STUMMES SHOW-LAYOUT -->
 <div id="show-screen">
     <div class="magic-text" id="res-name">Zuschauer: --</div>
     <div class="magic-text" id="res-datum">Datum: --</div>
     <div class="magic-text magic-card" id="res-karte">♣♠♥♦</div>
-    <div class="magic-text" id="res-geburtstag" style="color: #ffd700; font-weight: bold; margin-top: 25px;"></div>
+    <div class="magic-text" id="res-geburtstag" style="color: #ffd700 !important; font-weight: bold; margin-top: 25px;"></div>
 </div>
 
 <script>
@@ -129,7 +130,6 @@ if (!SpeechRecognition) {
     recognition.continuous = false; 
     recognition.interimResults = false;
 
-    // Lautlose Fehler- und Event-Absicherung im Hintergrund
     recognition.onstart = () => {};
     recognition.onaudiostart = () => {};
     recognition.onspeechstart = () => {};
@@ -142,16 +142,12 @@ if (!SpeechRecognition) {
     recognition.onresult = (event) => {
         let letzterIndex = event.results.length - 1;
         let result = event.results[letzterIndex];
-        if (!result || !result[0]) { return; }
+        if (!result || !result) { return; }
         
-        let roherText = result[0].transcript;
+        let roherText = result.transcript;
         if (!roherText) { return; }
         roherText = roherText.toLowerCase().trim();
 
-        /* =====================================================
-           BÄM!!! DAS HOCHGRADIG BÜHNENSICHERE REINIGUNGS-SKALPELL
-           Bügelt alle rabiaten Hörfehler aus Ihren Feldtests glatt!
-           ===================================================== */
         let text = roherText
             .replace(/ein\s+mal/g, "einmal")
             .replace(/zwei\s+mal/g, "zweimal")
@@ -160,10 +156,10 @@ if (!SpeechRecognition) {
             .replace(/fünf\s+mal/g, "viermal")
             .replace(/reihem\s+folge/g, "reihenfolge")
             .replace(/reihen\s+folge/g, "reihenfolge")
-            .replace(/kartendeckt/g, "reihenfolge")   // REPARATUR FÜR TEST 5
-            .replace(/deckels/g, "reihenfolge")       // REPARATUR FÜR TEST 6
-            .replace(/beachte/g, "14")                // REPARATUR FÜR TEST 6 (Beachte -> 14)
-            .replace(/achte/g, "8")                   // REPARATUR FÜR TEST 4 (Achte -> 8)
+            .replace(/kartendeckt/g, "reihenfolge")   
+            .replace(/deckels/g, "reihenfolge")       
+            .replace(/beachte/g, "14")                
+            .replace(/achte/g, "8")                   
             .replace(/ranz/g, "franz")
             .replace(/wolf/g, "12")
             .replace(/dein\s+datum/g, "dein datum");
@@ -171,13 +167,12 @@ if (!SpeechRecognition) {
         verarbeitetesResultat = event.results.length;
         verarbeiteSprache(text);
         
-        // Der Frischluft-Schock putzt den RAM für den nächsten Satz blitzsauber durch
         if (phase < 4) {
             try { recognition.abort(); } catch(e) {}
         }
     };
     function verarbeiteSprache(text) {
-        /* PRIORITY 1: DER ABSOLUTE NOT-AUSSTIEG GANZ OBEN (Rettet das Show-Finale!) */
+        /* PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN */
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
@@ -185,15 +180,14 @@ if (!SpeechRecognition) {
                 const heute = new Date();
                 istGeburtstag = geburtsTag === heute.getDate() && geburtsMonat === (heute.getMonth() + 1);
 
-                // Übersetzung des nackten Kartenwerts in echte Spielkarten-Namen (Bube, Dame, König)
                 let finalerWertName = kartenWert;
-                if (kartenWert === 1 || kartenWert === 14) finalerWertName = "Ass";
+                if (kartenWert === 1 || kartenWert === 14 || kartenWert === 0) finalerWertName = "Ass";
                 else if (kartenWert === 11) finalerWertName = "Bube";
                 else if (kartenWert === 12) finalerWertName = "Dame";
                 else if (kartenWert === 13) finalerWertName = "König";
 
                 /* =====================================================
-                   BÄM!!! DIE MAGISCHE SPEKTAKULÄRE INSZENIERUNG ZÜNDEN!
+                   BÄM!!! DIE MAGISCHE SPEKTAKULÄRE INSZENIERUNG ECHTEN TEXTES
                    ===================================================== */
                 document.getElementById("res-name").innerHTML = "Zuschauer: " + (zuschauerName || "(Gedankenübertragung aktiv)");
                 document.getElementById("res-datum").innerHTML = "Datum: " + (geburtsDatum || "(Mysterium)");
@@ -201,7 +195,6 @@ if (!SpeechRecognition) {
                 let kartenAnzeige = document.getElementById("res-karte");
                 kartenAnzeige.innerHTML = kartenFarbe + " " + finalerWertName;
                 
-                // Falls Pik oder Kreuz, färben wir die Karte edel weiß statt rot
                 if (kartenFarbe.includes("Pik") || kartenFarbe.includes("Kreuz")) {
                     kartenAnzeige.classList.add("black-card");
                 }
@@ -210,7 +203,7 @@ if (!SpeechRecognition) {
                     document.getElementById("res-geburtstag").innerHTML = "Alles Gute zum Geburtstag! 🎂✨";
                 }
 
-                // Das edle Show-Layout glüht wie von Geisterhand butterweich im Pechschwarz auf!
+                // Zündet das unblockierbare, sichtbare Aufglühen im WebView!
                 document.getElementById("show-screen").classList.add("visible");
                 
                 try { recognition.stop(); } catch(e) {}
@@ -224,7 +217,7 @@ if (!SpeechRecognition) {
             return;
         }
 
-        /* PHASE 1: KARTENFARBE (Nimmt Codewörter direkt mit gegen Testfehler 1 & 9!) */
+        /* PHASE 1: KARTENFARBE */
         if (phase === 1) {
             if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; phase = 2; verarbeiteCodewoerter(text); }
             else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; phase = 2; verarbeiteCodewoerter(text); }
@@ -255,7 +248,6 @@ if (!SpeechRecognition) {
                 }
             }
 
-            /* --- GIGANTISCHER FIX FÜR DEN "HEUTE"-TRIGGER (FÜR TESTFEHLER 2 & 3) --- */
             if (text.includes("heute") || text.includes("ist heute") || text.includes("ist also heute")) {
                 if (geburtsTag === null) {
                     const echtzeitUhr = new Date();
@@ -270,8 +262,8 @@ if (!SpeechRecognition) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
                 const zahlen = findeZahlen(nachAlso);
                 if (zahlen.length >= 2) {
-                    geburtsTag = zahlen[0];
-                    geburtsMonat = zahlen[1];
+                    geburtsTag = zahlen;
+                    geburtsMonat = zahlen;
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
                 }
             }
@@ -300,7 +292,7 @@ if (!SpeechRecognition) {
     try { recognition.start(); } catch(e) {}
 }
 
-/* NOT-AUS (3 Sek oben links gedrückt halten zum Neuladen) */
+/* NOT-AUS */
 let exitTimer = null;
 document.getElementById("emergency-exit").addEventListener("touchstart", () => { exitTimer = setTimeout(() => { location.reload(); }, 3000); });
 document.getElementById("emergency-exit").addEventListener("touchend", () => { clearTimeout(exitTimer); });
