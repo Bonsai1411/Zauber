@@ -12,7 +12,7 @@
         height: 100%;
         background: #000;
         overflow: hidden;
-        font-family: monospace;
+        font-family: 'Courier New', monospace;
     }
     #emergency-exit {
         position: fixed;
@@ -22,44 +22,56 @@
         height: 25%;
         z-index: 99999;
     }
-    #debug-console {
-        display: block;
-        position: fixed;
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-        height: 85%;
-        box-sizing: border-box;
-        background: #0a0a0a;
-        color: #aaa;
-        font-family: monospace;
-        font-size: 13px;
-        padding: 10px;
-        overflow-y: auto;
-        border: 1px solid #1a1a1a;
-        z-index: 99999;
-    }
-    #tarnkappe {
+    #show-screen {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: #000;
-        opacity: 0.0;
-        pointer-events: none;
-        z-index: 88888;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: #000;
+        z-index: 11111;
+        opacity: 0;
+        transition: opacity 2.5s ease-in-out; /* Butterweiches Kino-Aufglühen */
+    }
+    #show-screen.visible {
+        opacity: 1;
+    }
+    .magic-text {
+        color: #fff;
+        font-size: 24px;
+        text-shadow: 0 0 10px rgba(255,255,255,0.4);
+        margin: 15px 0;
+        letter-spacing: 2px;
+        text-align: center;
+    }
+    .magic-card {
+        color: #e50914; /* Mörderisch scharfes Herz/Karo-Rot */
+        font-size: 52px;
+        font-weight: bold;
+        text-shadow: 0 0 25px rgba(229,9,20,0.8);
+        margin-top: 30px;
+        letter-spacing: 4px;
+    }
+    .black-card {
+        color: #fff;
+        text-shadow: 0 0 25px rgba(255,255,255,0.8);
     }
 </style>
 </head>
 <body>
 
 <div id="emergency-exit"></div>
-<div id="tarnkappe"></div>
 
-<div id="debug-console">
-    --- DESIGNSTUFE: PROFI-ANALYSE AKTIV ---<br>
-    Warte auf „Zusammen“...
+<!-- STUMMES SHOW-LAYOUT: Erwacht erst beim Wort "Verdeckt" aus dem Pechschwarz -->
+<div id="show-screen">
+    <div class="magic-text" id="res-name">Zuschauer: --</div>
+    <div class="magic-text" id="res-datum">Datum: --</div>
+    <div class="magic-text magic-card" id="res-karte">♣♠♥♦</div>
+    <div class="magic-text" id="res-geburtstag" style="color: #ffd700; font-weight: bold; margin-top: 25px;"></div>
 </div>
 
 <script>
@@ -72,25 +84,8 @@ let geburtsMonat = null;
 let geburtsDatum = "";
 let istGeburtstag = false;
 let verarbeitetesResultat = 0;
-let benutzerScrollt = false;
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const consoleDiv = document.getElementById("debug-console");
-
-consoleDiv.addEventListener('scroll', () => {
-    if (consoleDiv.scrollHeight - consoleDiv.scrollTop > consoleDiv.clientHeight + 20) {
-        benutzerScrollt = true;
-    } else {
-        benutzerScrollt = false;
-    }
-});
-
-function logToConsole(text) {
-    consoleDiv.innerHTML += "<br>" + text;
-    if (!benutzerScrollt) {
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
-    }
-}
 
 const deutscheZahlen = {
     "null": 0, "eins": 1, "ein": 1, "zwei": 2, "drei": 3, "vier": 4, "fünf": 5, "funf": 5, "sechs": 6, "sieben": 7, "acht": 8, "neun": 9,
@@ -119,47 +114,43 @@ function findeZahlen(text) {
 }
 
 function verarbeiteCodewoerter(text) {
-    let etwasGefunden = false;
-    if (text.includes("händen") || text.includes("haenden")) { kartenWert += 10; etwasGefunden = true; logToConsole("➕ HÄNDEN = +10"); }
-    if (text.includes("einmal")) { kartenWert += 1; etwasGefunden = true; logToConsole("➕ EINMAL = +1"); }
-    if (text.includes("zweimal")) { kartenWert += 2; etwasGefunden = true; logToConsole("➕ ZWEIMAL = +2"); }
-    if (text.includes("dreimal")) { kartenWert += 3; etwasGefunden = true; logToConsole("➕ DREIMAL = +3"); }
-    if (text.includes("viermal")) { kartenWert += 4; etwasGefunden = true; logToConsole("➕ VIERMAL = +4"); }
-    if (!text.includes("händen") && !text.includes("haenden") && text.includes("hand")) { kartenWert += 5; etwasGefunden = true; logToConsole("➕ HAND = +5"); }
-    if (etwasGefunden) { logToConsole("AKTUELLER KARTENWERT: " + kartenWert); }
+    if (text.includes("händen") || text.includes("haenden")) { kartenWert += 10; }
+    if (text.includes("einmal")) { kartenWert += 1; }
+    if (text.includes("zweimal")) { kartenWert += 2; }
+    if (text.includes("dreimal")) { kartenWert += 3; }
+    if (text.includes("viermal")) { kartenWert += 4; }
+    if (!text.includes("händen") && !text.includes("haenden") && text.includes("hand")) { kartenWert += 5; }
 }
 if (!SpeechRecognition) {
-    logToConsole("❌ FEHLER: Dieser Browser unterstützt SpeechRecognition nicht.");
+    alert("Fehler: Browser unterstützt SpeechRecognition nicht.");
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
     recognition.continuous = false; 
     recognition.interimResults = false;
 
+    // Lautlose Fehler- und Event-Absicherung im Hintergrund
     recognition.onstart = () => {};
     recognition.onaudiostart = () => {};
     recognition.onspeechstart = () => {};
-    
     recognition.onerror = (event) => {
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
             setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
         }
     };
 
-       recognition.onresult = (event) => {
-        // Das unzerstörbare Profiliga-Uhrwerk: Wir greifen uns IMMER das absolut letzte Ergebnis!
+    recognition.onresult = (event) => {
         let letzterIndex = event.results.length - 1;
         let result = event.results[letzterIndex];
-        
         if (!result || !result[0]) { return; }
         
         let roherText = result[0].transcript;
         if (!roherText) { return; }
-        
         roherText = roherText.toLowerCase().trim();
 
         /* =====================================================
-           BÄM!!! DAS HOCHGRADIG ERWEITERTE REINIGUNGS-SKALPELL
+           BÄM!!! DAS HOCHGRADIG BÜHNENSICHERE REINIGUNGS-SKALPELL
+           Bügelt alle rabiaten Hörfehler aus Ihren Feldtests glatt!
            ===================================================== */
         let text = roherText
             .replace(/ein\s+mal/g, "einmal")
@@ -169,14 +160,15 @@ if (!SpeechRecognition) {
             .replace(/fünf\s+mal/g, "viermal")
             .replace(/reihem\s+folge/g, "reihenfolge")
             .replace(/reihen\s+folge/g, "reihenfolge")
-            .replace(/garten/g, "reihenfolge") 
-            .replace(/t1/g, "heute") 
+            .replace(/kartendeckt/g, "reihenfolge")   // REPARATUR FÜR TEST 5
+            .replace(/deckels/g, "reihenfolge")       // REPARATUR FÜR TEST 6
+            .replace(/beachte/g, "14")                // REPARATUR FÜR TEST 6 (Beachte -> 14)
+            .replace(/achte/g, "8")                   // REPARATUR FÜR TEST 4 (Achte -> 8)
             .replace(/ranz/g, "franz")
             .replace(/wolf/g, "12")
             .replace(/dein\s+datum/g, "dein datum");
 
-        logToConsole("📝 GEHÖRT: „" + roherText + "“");
-        if (roherText !== text) { logToConsole("✨ GEBÜGELT: „" + text + "“"); }
+        verarbeitetesResultat = event.results.length;
         verarbeiteSprache(text);
         
         // Der Frischluft-Schock putzt den RAM für den nächsten Satz blitzsauber durch
@@ -184,25 +176,43 @@ if (!SpeechRecognition) {
             try { recognition.abort(); } catch(e) {}
         }
     };
-
     function verarbeiteSprache(text) {
-        /* PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN */
+        /* PRIORITY 1: DER ABSOLUTE NOT-AUSSTIEG GANZ OBEN (Rettet das Show-Finale!) */
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
-                logToConsole("🛑 ABSCHLUSS-SIGNAL ERKANNT -> TRICK BEENDET");
 
                 const heute = new Date();
                 istGeburtstag = geburtsTag === heute.getDate() && geburtsMonat === (heute.getMonth() + 1);
 
-                logToConsole("--------------------------------");
-                logToConsole("ERGEBNIS");
-                logToConsole("FARBE: " + kartenFarbe);
-                logToConsole("WERT: " + kartenWert);
-                logToConsole("NAME: " + (zuschauerName || "(kein Name erkannt)"));
-                logToConsole("DATUM: " + (geburtsDatum || "(kein Datum erkannt)"));
-                logToConsole("GEBURTSTAG: " + (istGeburtstag ? "JA 🎂" : "NEIN"));
-                logToConsole("--------------------------------");
+                // Übersetzung des nackten Kartenwerts in echte Spielkarten-Namen (Bube, Dame, König)
+                let finalerWertName = kartenWert;
+                if (kartenWert === 1 || kartenWert === 14) finalerWertName = "Ass";
+                else if (kartenWert === 11) finalerWertName = "Bube";
+                else if (kartenWert === 12) finalerWertName = "Dame";
+                else if (kartenWert === 13) finalerWertName = "König";
+
+                /* =====================================================
+                   BÄM!!! DIE MAGISCHE SPEKTAKULÄRE INSZENIERUNG ZÜNDEN!
+                   ===================================================== */
+                document.getElementById("res-name").innerHTML = "Zuschauer: " + (zuschauerName || "(Gedankenübertragung aktiv)");
+                document.getElementById("res-datum").innerHTML = "Datum: " + (geburtsDatum || "(Mysterium)");
+                
+                let kartenAnzeige = document.getElementById("res-karte");
+                kartenAnzeige.innerHTML = kartenFarbe + " " + finalerWertName;
+                
+                // Falls Pik oder Kreuz, färben wir die Karte edel weiß statt rot
+                if (kartenFarbe.includes("Pik") || kartenFarbe.includes("Kreuz")) {
+                    kartenAnzeige.classList.add("black-card");
+                }
+
+                if (istGeburtstag) {
+                    document.getElementById("res-geburtstag").innerHTML = "Alles Gute zum Geburtstag! 🎂✨";
+                }
+
+                // Das edle Show-Layout glüht wie von Geisterhand butterweich im Pechschwarz auf!
+                document.getElementById("show-screen").classList.add("visible");
+                
                 try { recognition.stop(); } catch(e) {}
                 return;
             }
@@ -210,17 +220,16 @@ if (!SpeechRecognition) {
 
         /* PHASE 0: ZUSAMMEN */
         if (phase === 0) {
-            if (text.includes("zusammen")) { phase = 1; logToConsole("▶️ „ZUSAMMEN“ ERKANNT -> PHASE 1"); }
+            if (text.includes("zusammen")) { phase = 1; }
             return;
         }
 
-        /* PHASE 1: KARTENFARBE */
+        /* PHASE 1: KARTENFARBE (Nimmt Codewörter direkt mit gegen Testfehler 1 & 9!) */
         if (phase === 1) {
-            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; }
-            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; }
-            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; }
-            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; }
-            if (kartenFarbe !== "") { phase = 2; logToConsole("🃏 FARBE: " + kartenFarbe + " -> PHASE 2"); }
+            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; phase = 2; verarbeiteCodewoerter(text); }
+            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; phase = 2; verarbeiteCodewoerter(text); }
+            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; phase = 2; verarbeiteCodewoerter(text); }
+            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; phase = 2; verarbeiteCodewoerter(text); }
             return;
         }
 
@@ -229,7 +238,6 @@ if (!SpeechRecognition) {
             if (text.includes("reihenfolge")) {
                 verarbeiteCodewoerter(text);
                 phase = 3;
-                logToConsole("🔒 „REIHENFOLGE“ -> KARTENWERT: " + kartenWert + " -> PHASE 3");
                 return;
             }
             verarbeiteCodewoerter(text);
@@ -244,36 +252,34 @@ if (!SpeechRecognition) {
                 nameTeil = nameTeil.replace(/^[,.:;!? ]+|[,.:;!? ]+\$/g, "");
                 if (nameTeil.toLowerCase() !== "name" && nameTeil !== "") {
                     zuschauerName = nameTeil.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-                    logToConsole("👤 NAME DETEKTIERT: " + zuschauerName);
+                }
+            }
+
+            /* --- GIGANTISCHER FIX FÜR DEN "HEUTE"-TRIGGER (FÜR TESTFEHLER 2 & 3) --- */
+            if (text.includes("heute") || text.includes("ist heute") || text.includes("ist also heute")) {
+                if (geburtsTag === null) {
+                    const echtzeitUhr = new Date();
+                    geburtsTag = echtzeitUhr.getDate();
+                    geburtsMonat = echtzeitUhr.getMonth() + 1;
+                    geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
                 }
             }
 
             const alsoPosition = text.indexOf("also");
             if (alsoPosition !== -1 && geburtsTag === null) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
-
-                if (nachAlso.includes("heute") || text.includes("ist heute") || text.includes("ist also heute")) {
-                    const echtzeitUhr = new Date();
-                    geburtsTag = echtzeitUhr.getDate();
-                    geburtsMonat = echtzeitUhr.getMonth() + 1;
+                const zahlen = findeZahlen(nachAlso);
+                if (zahlen.length >= 2) {
+                    geburtsTag = zahlen[0];
+                    geburtsMonat = zahlen[1];
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                    logToConsole("📅 SPONTAN-DATUM (HEUTE): " + geburtsDatum);
-                } 
-                else {
-                    const zahlen = findeZahlen(nachAlso);
-                    if (zahlen.length >= 2) {
-                        geburtsTag = zahlen[0];
-                        geburtsMonat = zahlen[1];
-                        geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                        logToConsole("📅 DATUM MATCHED: " + geburtsDatum);
-                    }
                 }
             }
             return;
         }
     }
 
-    /* WECHSELSTROM-RESTART WITH ANTI-LOOP-VERRIEGELUNG */
+    /* ANTILOOP-SCHRANKE */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
@@ -284,11 +290,10 @@ if (!SpeechRecognition) {
             if (neustartTimer) { clearTimeout(neustartTimer); }
             neustartTimer = setTimeout(() => {
                 try {
-                    verarbeitetesResultat = 0; 
                     recognition.start();
                     setTimeout(() => { antiLoopSperre = false; }, 1000);
                 } catch (e) { antiLoopSperre = false; }
-            }, 400); // Schneller, knackiger 400ms RAM-Wechsel für maximale Frische
+            }, 400); 
         }
     };
 
