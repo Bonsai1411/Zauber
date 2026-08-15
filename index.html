@@ -250,12 +250,14 @@ if (!SpeechRecognition) {
             const alsoPosition = text.indexOf("also");
             if (alsoPosition !== -1 && geburtsTag === null) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
-                const zahlen = findeZahlen(nachAlso);
-                if (zahlen.length >= 2) {
-                    geburtsTag = zahlen[0];
-                    geburtsMonat = zahlen[1];
-                    geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                }
+               const zahlen = findeZahlen(nachAlso);
+if (zahlen.length >= 2) {
+    // BÄM! Wir ziehen die Zahlen einzeln und messerscharf heraus!
+    geburtsTag = zahlen[0]; 
+    geburtsMonat = zahlen[1]; 
+    geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
+}
+
             }
             return;
         }
