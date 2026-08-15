@@ -1,3 +1,179 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mystery Master - Labor 3.0</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+        font-family: monospace;
+    }
+    #emergency-exit {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 25%;
+        height: 25%;
+        z-index: 99999;
+    }
+    #debug-console {
+        display: block;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        box-sizing: border-box;
+        background: #050505;
+        color: #00ff00; /* Giftgrüner Matrix-Look für perfekte Lesbarkeit */
+        font-family: monospace;
+        font-size: 12px;
+        line-height: 16px;
+        padding: 15px;
+        overflow-y: auto;
+        border: 2px solid #111;
+        z-index: 99999;
+    }
+</style>
+</head>
+<body>
+
+<div id="emergency-exit"></div>
+
+<div id="debug-console">
+    ==================================================<br>
+    🚀 SYSTEM-LABOR 3.0: RETRO-FUNDAMENT AKTIV<br>
+    ==================================================<br>
+    [STATUS] Warte auf Phase 0: „zusammen“...
+</div>
+
+<script>
+let phase = 0;
+let kartenFarbe = "";
+let kartenWert = 0;
+let zuschauerName = "";
+let geburtsTag = null;
+let geburtsMonat = null;
+let geburtsDatum = "";
+let istGeburtstag = false;
+let verarbeitetesResultat = 0;
+let benutzerScrollt = false;
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const consoleDiv = document.getElementById("debug-console");
+
+consoleDiv.addEventListener('scroll', () => {
+    if (consoleDiv.scrollHeight - consoleDiv.scrollTop > consoleDiv.clientHeight + 30) {
+        benutzerScrollt = true;
+    } else {
+        benutzerScrollt = false;
+    }
+});
+
+function logToConsole(text) {
+    if (consoleDiv) {
+        consoleDiv.innerHTML += "<br>" + text;
+        if (!benutzerScrollt) {
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+    }
+}
+
+const deutscheZahlen = {
+    "null": 0, "eins": 1, "ein": 1, "zwei": 2, "drei": 3, "vier": 4, "fünf": 5, "funf": 5, "sechs": 6, "sieben": 7, "acht": 8, "neun": 9,
+    "zehn": 10, "elf": 11, "zwölf": 12, "zwolf": 12, "dreizehn": 13, "vierzehn": 14, "fünfzehn": 15, "funfzehn": 15, "sechzehn": 16, "siebzehn": 17, "achtzehn": 18, "neunzehn": 19,
+    "zwanzig": 20, "einundzwanzig": 21, "zweiundzwanzig": 22, "dreiundzwanzig": 23, "vierundzwanzig": 24, "fünfundzwanzig": 25, "funfundzwanzig": 25, "sechsundzwanzig": 26, "siebenundzwanzig": 27, "achtundzwanzig": 28, "neunundzwanzig": 29,
+    "dreißig": 30, "dreissig": 30, "einunddreißig": 31, "einunddreissig": 31
+};
+
+function findeZahlen(text) {
+    let zahlen = [];
+    let gesaeubert = text.replace(/\./g, " ");
+    const mitZiffern = gesaeubert.match(/\d+/g);
+    if (mitZiffern) {
+        for (const zahl of mitZiffern) {
+            const wert = parseInt(zahl, 10);
+            if (!isNaN(wert)) { zahlen.push(wert); }
+        }
+    }
+    const woerter = gesaeubert.toLowerCase().replace(/[.,!?;:]/g, " ").split(/\s+/).filter(Boolean);
+    for (const wort of woerter) {
+        if (Object.prototype.hasOwnProperty.call(deutscheZahlen, wort)) {
+            zahlen.push(deutscheZahlen[wort]);
+        }
+    }
+    return zahlen;
+}
+
+function verarbeiteCodewoerter(text) {
+    let etwasGefunden = false;
+    if (text.includes("händen") || text.includes("haenden")) { kartenWert += 10; etwasGefunden = true; logToConsole("👉 [CODE] HÄNDEN erkannt (+10)"); }
+    if (text.includes("einmal")) { kartenWert += 1; etwasGefunden = true; logToConsole("👉 [CODE] EINMAL erkannt (+1)"); }
+    if (text.includes("zweimal")) { kartenWert += 2; etwasGefunden = true; logToConsole("👉 [CODE] ZWEIMAL erkannt (+2)"); }
+    if (text.includes("dreimal")) { kartenWert += 3; etwasGefunden = true; logToConsole("👉 [CODE] DREIMAL erkannt (+3)"); }
+    if (text.includes("viermal")) { kartenWert += 4; etwasGefunden = true; logToConsole("👉 [CODE] VIERMAL erkannt (+4)"); }
+    if (!text.includes("händen") && !text.includes("haenden") && text.includes("hand")) { kartenWert += 5; etwasGefunden = true; logToConsole("👉 [CODE] HAND erkannt (+5)"); }
+    if (etwasGefunden) { logToConsole("📊 RECHENWERT AKTUELL: " + kartenWert); }
+}
+if (!SpeechRecognition) {
+    logToConsole("❌ FEHLER: Dieser Browser unterstützt webkitSpeechRecognition nicht!");
+} else {
+    const recognition = new SpeechRecognition();
+    recognition.lang = "de-DE";
+    recognition.continuous = false; // UR-ZUSTAND: Garantiert den flüssigen Android-Wechselstrom
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {};
+    recognition.onaudiostart = () => {};
+    recognition.onspeechstart = () => {};
+
+    recognition.onerror = (event) => {
+        if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
+            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
+        }
+    };
+
+    recognition.onresult = (event) => {
+        for (let i = verarbeitetesResultat; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (!result || !result[0]) { continue; }
+            let roherText = result[0].transcript;
+            if (!roherText) { continue; }
+            roherText = roherText.toLowerCase().trim();
+            verarbeitetesResultat = i + 1;
+
+            /* =====================================================
+               ✨ DAS HOCHGRADIG JUSTIERTE BÜHLEN-BÜGEL-SKALPELL
+               Verschmilzt und korrigiert alle Hörfehler aus Ihren Protokollen!
+               ===================================================== */
+            let text = roherText
+                .replace(/ein\s+mal/g, "einmal")
+                .replace(/zwei\s+mal/g, "zweimal")
+                .replace(/drei\s+mal/g, "dreimal")
+                .replace(/vier\s+mal/g, "viermal")
+                .replace(/fünf\s+mal/g, "viermal")
+                .replace(/reihem\s+folge/g, "reihenfolge")
+                .replace(/reihen\s+folge/g, "reihenfolge")
+                .replace(/garten/g, "reihenfolge")       // FIX FÜR TEST 3 (garten -> reihenfolge)
+                .replace(/kartendeckt/g, "reihenfolge")   // FIX FÜR TEST 5 (kartendeckt -> reihenfolge)
+                .replace(/deckels/g, "reihenfolge")       // FIX FÜR TEST 6 (deckels -> reihenfolge)
+                .replace(/beachte/g, "14")                // FIX FÜR TEST 6 (beachte -> 14)
+                .replace(/achte/g, "8")                   // FIX FÜR TEST 4 (achte -> 8)
+                .replace(/ranz/g, "franz")                // FIX FÜR TEST 2 (ranz -> franz)
+                .replace(/wolf/g, "12")                   // FIX FÜR TEST 14 (wolf -> 12)
+                .replace(/dein\s+datum/g, "dein datum");
+
+            logToConsole("<br>📢 [GEHÖRT] „" + roherText + "“");
+            if (roherText !== text) { logToConsole("✨ [GEBÜGELT] „" + text + "“"); }
+            verarbeiteSprache(text);
+        }
+    };
     function verarbeiteSprache(text) {
         logToConsole("🔍 [ANALYSE] Prüfe Phase " + phase + "...");
 
@@ -5,7 +181,7 @@
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
-                logToConsole("🎯 [TRIGGER] ABSCHLUSS-SIGNAL ERKANNT!");
+                logToConsole("🎯 [TRIGGER] ABSCHLUSS-SIGNAL ERKANNT -> TRICK BEENDET");
 
                 const heute = new Date();
                 istGeburtstag = geburtsTag === heute.getDate() && geburtsMonat === (heute.getMonth() + 1);
@@ -19,32 +195,30 @@
                 logToConsole("📅 DATUM: " + (geburtsDatum || "❌ (KEIN DATUM GEFUNDEN)"));
                 logToConsole("🎂 GEBURTSTAG HEUTE: " + (istGeburtstag ? "JA! 🎂🎈" : "NEIN"));
                 logToConsole("================================================");
-                logToConsole("🏁 ERGEBNIS-PRODUKTION VOLLEVENDET. LABORMANTEL AUS.");
                 recognition.stop();
                 return;
             }
         }
 
-        /* PHASE 0 & 1 VERSCHMOLZEN: DAS DURCHZÜND-RELAIS */
-        if (phase === 0 || phase === 1) {
-            if (phase === 0 && text.includes("zusammen")) {
+        /* PHASE 0: ZUSAMMEN */
+        if (phase === 0) {
+            if (text.includes("zusammen")) {
                 phase = 1;
-                logToConsole("🔓 [PHASENWECHSEL] „zusammen“ erkannt -> Springe in PHASE 1");
+                logToConsole("🔓 [PHASENWECHSEL] Phase 0 -> Springe in PHASE 1");
             }
-            
-            if (phase === 1) {
-                let farbeGefunden = false;
-                if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
-                else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; farbeGefunden = true; }
-                else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; farbeGefunden = true; }
-                else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; farbeGefunden = true; }
+            return;
+        }
 
-                if (farbeGefunden) {
-                    phase = 2;
-                    logToConsole("🃏 [ANALYSE] Farbe gelockt: " + kartenFarbe + " -> Springe DIREKT in PHASE 2");
-                    verarbeiteCodewoerter(text);
-                    return;
-                }
+        /* PHASE 1: KARTENFARBE (Panzersicher über .includes) */
+        if (phase === 1) {
+            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; }
+            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; }
+            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; }
+            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; }
+
+            if (kartenFarbe !== "") {
+                phase = 2;
+                logToConsole("🔓 [PHASENWECHSEL] Farbe gelockt: " + kartenFarbe + " -> Springe in PHASE 2");
             }
             return;
         }
@@ -88,7 +262,7 @@
                 const nachAlso = text.substring(alsoPosition + 4).trim();
                 const zahlen = findeZahlen(nachAlso);
                 if (zahlen.length >= 2) {
-                    // DIAMANT-FIX FOR ARRAYS: Wir ziehen die Werte absolut einzeln heraus!
+                    // MÄCHTIGER ARRAY-FIX: Wir ziehen die Werte absolut einzeln heraus!
                     geburtsTag = zahlen[0];
                     geburtsMonat = zahlen[1];
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
@@ -99,7 +273,7 @@
         }
     }
 
-    /* ENTSPANNTER SCHRANKEN-RESTART */
+    /* GESTERNS REINER, UNZAPPLIGER WECHSELSTROM-RESTART */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
@@ -115,193 +289,6 @@
                     setTimeout(() => { antiLoopSperre = false; }, 1000);
                 } catch (e) { antiLoopSperre = false; }
             }, 800); 
-        }
-    };
-
-    try { recognition.start(); } catch(e) {}
-}
-
-/* NOT-AUS */
-let exitTimer = null;
-document.getElementById("emergency-exit").addEventListener("touchstart", () => { exitTimer = setTimeout(() => { location.reload(); }, 3000); });
-document.getElementById("emergency-exit").addEventListener("touchend", () => { clearTimeout(exitTimer); });
-</script>
-</body>
-</html>
-if (!SpeechRecognition) {
-    logToConsole("❌ FEHLER: Dieser Browser unterstützt SpeechRecognition nicht.");
-} else {
-    const recognition = new SpeechRecognition();
-    recognition.lang = "de-DE";
-    recognition.continuous = false; 
-    recognition.interimResults = false;
-
-    recognition.onstart = () => {};
-    recognition.onaudiostart = () => {};
-    recognition.onspeechstart = () => {};
-    
-    recognition.onerror = (event) => {
-        if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
-            setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
-        }
-    };
-
-    recognition.onresult = (event) => {
-        // Das unzerstörbare Profiliga-Uhrwerk: Wir greifen uns IMMER das absolut letzte Ergebnis!
-        let letzterIndex = event.results.length - 1;
-        let result = event.results[letzterIndex];
-        
-        if (!result || !result[0]) { return; }
-        
-        let roherText = result[0].transcript;
-        if (!roherText) { return; }
-        
-        roherText = roherText.toLowerCase().trim();
-
-        /* =====================================================
-           BÄM!!! DAS HOCHGRADIG ERWEITERTE REINIGUNGS-SKALPELL
-           ===================================================== */
-        let text = roherText
-            .replace(/ein\s+mal/g, "einmal")
-            .replace(/zwei\s+mal/g, "zweimal")
-            .replace(/drei\s+mal/g, "dreimal")
-            .replace(/vier\s+mal/g, "viermal")
-            .replace(/fünf\s+mal/g, "viermal")
-            .replace(/reihem\s+folge/g, "reihenfolge")
-            .replace(/reihen\s+folge/g, "reihenfolge")
-            .replace(/garten/g, "reihenfolge") 
-            .replace(/t1/g, "heute") 
-            .replace(/ranz/g, "franz")
-            .replace(/wolf/g, "12")
-            .replace(/dein\s+datum/g, "dein datum");
-
-        logToConsole("📝 GEHÖRT: „" + roherText + "“");
-        if (roherText !== text) { logToConsole("✨ GEBÜGELT: „" + text + "“"); }
-        verarbeiteSprache(text);
-        
-        // Der Frischluft-Schock putzt den RAM für den nächsten Satz blitzsauber durch
-        if (phase < 4) {
-            try { recognition.abort(); } catch(e) {}
-        }
-    };
-
-    };
-
-        
-        /* =====================================================
-           🚀 DER UNZERSTÖRBARE FRISCHLUFT-SCHOCK (RAM-HAMMER)
-           Zwingt das S26 nach JEDEM erkannten Satz zum radikalen 
-           RAM-Reset, damit das Ohr NIEMALS wieder stumm einschläft!
-           ===================================================== */
-        if (phase < 4) {
-            logToConsole("⚡ RAM-SCHOCK: Erwische Geister-Timeouts...");
-            try { recognition.abort(); } catch(e) {}
-        }
-    };
-    function verarbeiteSprache(text) {
-        /* PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN */
-        if (phase === 3) {
-            if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
-                phase = 4;
-                logToConsole("🛑 ABSCHLUSS-SIGNAL ERKANNT -> TRICK BEENDET");
-
-                const heute = new Date();
-                istGeburtstag = geburtsTag === heute.getDate() && geburtsMonat === (heute.getMonth() + 1);
-
-                logToConsole("--------------------------------");
-                logToConsole("ERGEBNIS");
-                logToConsole("FARBE: " + kartenFarbe);
-                logToConsole("WERT: " + kartenWert);
-                logToConsole("NAME: " + (zuschauerName || "(kein Name erkannt)"));
-                logToConsole("DATUM: " + (geburtsDatum || "(kein Datum erkannt)"));
-                logToConsole("GEBURTSTAG: " + (istGeburtstag ? "JA 🎂" : "NEIN"));
-                logToConsole("--------------------------------");
-                try { recognition.stop(); } catch(e) {}
-                return;
-            }
-        }
-
-        /* PHASE 0: ZUSAMMEN */
-        if (phase === 0) {
-            if (text.includes("zusammen")) { phase = 1; logToConsole("▶️ „ZUSAMMEN“ ERKANNT -> PHASE 1"); }
-            return;
-        }
-
-        /* PHASE 1: KARTENFARBE */
-        if (phase === 1) {
-            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; }
-            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; }
-            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; }
-            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; }
-            if (kartenFarbe !== "") { phase = 2; logToConsole("🃏 FARBE: " + kartenFarbe + " -> PHASE 2"); }
-            return;
-        }
-
-        /* PHASE 2: CODEWÖRTER */
-        if (phase === 2) {
-            if (text.includes("reihenfolge")) {
-                verarbeiteCodewoerter(text);
-                phase = 3;
-                logToConsole("🔒 „REIHENFOLGE“ -> KARTENWERT: " + kartenWert + " -> PHASE 3");
-                return;
-            }
-            verarbeiteCodewoerter(text);
-            return;
-        }
-
-        /* PHASE 3: NAME + DATUM */
-        if (phase === 3) {
-            const datumPosition = text.indexOf("dein datum");
-            if (datumPosition > 0 && zuschauerName === "") {
-                let nameTeil = text.substring(0, datumPosition).trim();
-                nameTeil = nameTeil.replace(/^[,.:;!? ]+|[,.:;!? ]+\$/g, "");
-                if (nameTeil.toLowerCase() !== "name" && nameTeil !== "") {
-                    zuschauerName = nameTeil.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-                    logToConsole("👤 NAME DETEKTIERT: " + zuschauerName);
-                }
-            }
-
-            const alsoPosition = text.indexOf("also");
-            if (alsoPosition !== -1 && geburtsTag === null) {
-                const nachAlso = text.substring(alsoPosition + 4).trim();
-
-                if (nachAlso.includes("heute") || text.includes("ist heute") || text.includes("ist also heute")) {
-                    const echtzeitUhr = new Date();
-                    geburtsTag = echtzeitUhr.getDate();
-                    geburtsMonat = echtzeitUhr.getMonth() + 1;
-                    geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                    logToConsole("📅 SPONTAN-DATUM (HEUTE): " + geburtsDatum);
-                } 
-                else {
-                    const zahlen = findeZahlen(nachAlso);
-                    if (zahlen.length >= 2) {
-                        geburtsTag = zahlen[0];
-                        geburtsMonat = zahlen[1];
-                        geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                        logToConsole("📅 DATUM MATCHED: " + geburtsDatum);
-                    }
-                }
-            }
-            return;
-        }
-    }
-
-    /* WECHSELSTROM-RESTART WITH ANTI-LOOP-VERRIEGELUNG */
-    let neustartTimer = null;
-    let antiLoopSperre = false;
-
-    recognition.onend = () => {
-        if (phase < 4) {
-            if (antiLoopSperre) { return; }
-            antiLoopSperre = true;
-            if (neustartTimer) { clearTimeout(neustartTimer); }
-            neustartTimer = setTimeout(() => {
-                try {
-                    verarbeitetesResultat = 0; 
-                    recognition.start();
-                    setTimeout(() => { antiLoopSperre = false; }, 1000);
-                } catch (e) { antiLoopSperre = false; }
-            }, 400); // Schneller, knackiger 400ms RAM-Wechsel für maximale Frische
         }
     };
 
