@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mystery Master - Labor 2.5</title>
+<title>Mystery Master - Labor 4.0</title>
 <style>
     html, body {
         margin: 0;
@@ -31,7 +31,7 @@
         bottom: 10px;
         box-sizing: border-box;
         background: #050505;
-        color: #00ff00; /* Giftgrüner Matrix-Look für perfekte Lesbarkeit */
+        color: #00ff00;
         font-family: monospace;
         font-size: 12px;
         line-height: 16px;
@@ -48,7 +48,7 @@
 
 <div id="debug-console">
     ==================================================<br>
-    🚀 SYSTEM-LABOR 2.5: FLÜSSIGER KANAL AKTIV<br>
+    🚀 SYSTEM-LABOR 4.0: DURCHZÜND-KANAL SCHARF<br>
     ==================================================<br>
     [STATUS] Warte auf Phase 0: „zusammen“...
 </div>
@@ -111,7 +111,6 @@ function findeZahlen(text) {
     return zahlen;
 }
 
-// Codewörter rechnen absolut sauber zusammen
 function verarbeiteCodewoerter(text) {
     let etwasGefunden = false;
     if (text.includes("händen") || text.includes("haenden")) { kartenWert += 10; etwasGefunden = true; logToConsole("👉 [CODEWORT] HÄNDEN erkannt (+10)"); }
@@ -127,16 +126,14 @@ if (!SpeechRecognition) {
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
-    recognition.continuous = false; // Zwingt Android zur legalen, sauberen Ergebnisübergabe
+    recognition.continuous = false; 
     recognition.interimResults = false;
 
-    // Diese System-Meldungen loggen wir ABSICHTLICH nicht, damit die Schleife verschwindet!
     recognition.onstart = () => {};
     recognition.onaudiostart = () => {};
     recognition.onspeechstart = () => {};
 
     recognition.onerror = (event) => {
-        // Timeouts werden lautlos im stummen Hintergrund reanimiert
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
             setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
         }
@@ -145,9 +142,9 @@ if (!SpeechRecognition) {
     recognition.onresult = (event) => {
         let letzterIndex = event.results.length - 1;
         let result = event.results[letzterIndex];
-        if (!result || !result[0]) { return; }
+        if (!result || !result) { return; }
         
-        let roherText = result[0].transcript;
+        let roherText = result.transcript;
         if (!roherText) { return; }
         roherText = roherText.toLowerCase().trim();
 
@@ -170,7 +167,6 @@ if (!SpeechRecognition) {
         
         verarbeiteSprache(text);
         
-        // Der Frischluft-Wechselstrom pustet das Ohr nach jedem verstandenen Satz legal durch
         if (phase < 4) {
             try { recognition.abort(); } catch(e) {}
         }
@@ -178,9 +174,7 @@ if (!SpeechRecognition) {
     function verarbeiteSprache(text) {
         logToConsole("🔍 [ANALYSE] Prüfe Phase " + phase + "...");
 
-        /* =====================================================
-           🚀 PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN
-           ===================================================== */
+        /* PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN */
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
@@ -203,19 +197,13 @@ if (!SpeechRecognition) {
             }
         }
 
-        /* =====================================================
-           🔓 PHASE 0 & 1 VERSCHMOLZEN: DAS PHASEN-DURCHZÜND-RELAIS
-           Zerschmettert die Blockade bei flüssigem Redefluss!
-           ===================================================== */
+        /* PHASE 0 & 1 VERSCHMOLZEN: DAS UNBLOCKIERBARE DURCHZÜND-RELAIS */
         if (phase === 0 || phase === 1) {
-            // Falls wir in Phase 0 starten, prüfen wir erst den Grund-Trigger
             if (phase === 0 && text.includes("zusammen")) {
                 phase = 1;
                 logToConsole("🔓 [PHASENWECHSEL] „zusammen“ erkannt -> Springe in PHASE 1");
             }
             
-            // BÄM! Wenn wir in Phase 1 sind (oder gerade reingesprungen sind), 
-            // prüfen wir SOFORT im selben Wimpernschlag die Farb-Tarnwörter!
             if (phase === 1) {
                 let farbeGefunden = false;
                 if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
@@ -225,8 +213,7 @@ if (!SpeechRecognition) {
 
                 if (farbeGefunden) {
                     phase = 2;
-                    logToConsole("🃏 [ANALYSE] Farbe im selben Satz gelockt: " + kartenFarbe + " -> Springe DIREKT in PHASE 2");
-                    // Falls Sie den Wert auch schon im selben Satz genannt haben, rechnen wir ihn direkt an!
+                    logToConsole("🃏 [ANALYSE] Farbe gelockt: " + kartenFarbe + " -> Springe DIREKT in PHASE 2");
                     verarbeiteCodewoerter(text);
                     return;
                 }
@@ -234,9 +221,7 @@ if (!SpeechRecognition) {
             return;
         }
 
-        /* =====================================================
-           🔓 PHASE 2: CODEWÖRTER SAMMELN
-           ===================================================== */
+        /* PHASE 2: CODEWÖRTER */
         if (phase === 2) {
             if (text.includes("reihenfolge")) {
                 verarbeiteCodewoerter(text);
@@ -248,9 +233,7 @@ if (!SpeechRecognition) {
             return;
         }
 
-        /* =====================================================
-           🔓 PHASE 3: NAME + DATUM EXTRAKTION
-           ===================================================== */
+        /* PHASE 3: NAME + DATUM */
         if (phase === 3) {
             const datumPosition = text.indexOf("dein datum");
             if (datumPosition > 0 && zuschauerName === "") {
@@ -277,8 +260,8 @@ if (!SpeechRecognition) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
                 const zahlen = findeZahlen(nachAlso);
                 if (zahlen.length >= 2) {
-                    geburtsTag = zahlen[0];
-                    geburtsMonat = zahlen[1];
+                    geburtsTag = zahlen;
+                    geburtsMonat = zahlen;
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
                     logToConsole("📅 [PRODUKT] Zahlen-Datum gesichert: " + geburtsDatum);
                 }
@@ -286,6 +269,10 @@ if (!SpeechRecognition) {
             return;
         }
     }
+
+    /* GESTERNS REINER SCHRANKEN-RESTART */
+    let neustartTimer = null;
+    let antiLoopSperre = false;
 
     recognition.onend = () => {
         if (phase < 4) {
@@ -305,7 +292,7 @@ if (!SpeechRecognition) {
     try { recognition.start(); } catch(e) {}
 }
 
-/* NOT-AUS (3 Sek oben links gedrückt halten zum Neuladen) */
+/* NOT-AUS */
 let exitTimer = null;
 document.getElementById("emergency-exit").addEventListener("touchstart", () => { exitTimer = setTimeout(() => { location.reload(); }, 3000); });
 document.getElementById("emergency-exit").addEventListener("touchend", () => { clearTimeout(exitTimer); });
