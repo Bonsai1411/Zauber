@@ -178,7 +178,9 @@ if (!SpeechRecognition) {
     function verarbeiteSprache(text) {
         logToConsole("🔍 [ANALYSE] Prüfe Phase " + phase + "...");
 
-        /* PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN (Rettet das Show-Finale!) */
+        /* =====================================================
+           🚀 PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN
+           ===================================================== */
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
@@ -196,35 +198,45 @@ if (!SpeechRecognition) {
                 logToConsole("📅 DATUM: " + (geburtsDatum || "❌ (KEIN DATUM GEFUNDEN)"));
                 logToConsole("🎂 GEBURTSTAG HEUTE: " + (istGeburtstag ? "JA! 🎂🎈" : "NEIN"));
                 logToConsole("================================================");
-                logToConsole("🏁 ERGEBNIS-PRODUKTION VENSELT. OHR SCHLÄFT EIN.");
                 recognition.stop();
                 return;
             }
         }
 
-        /* PHASE 0: ZUSAMMEN */
-        if (phase === 0) {
-            if (text.includes("zusammen")) {
+        /* =====================================================
+           🔓 PHASE 0 & 1 VERSCHMOLZEN: DAS PHASEN-DURCHZÜND-RELAIS
+           Zerschmettert die Blockade bei flüssigem Redefluss!
+           ===================================================== */
+        if (phase === 0 || phase === 1) {
+            // Falls wir in Phase 0 starten, prüfen wir erst den Grund-Trigger
+            if (phase === 0 && text.includes("zusammen")) {
                 phase = 1;
-                logToConsole("🔓 [PHASENWECHSEL] Phase 0 -> Springe in PHASE 1");
+                logToConsole("🔓 [PHASENWECHSEL] „zusammen“ erkannt -> Springe in PHASE 1");
+            }
+            
+            // BÄM! Wenn wir in Phase 1 sind (oder gerade reingesprungen sind), 
+            // prüfen wir SOFORT im selben Wimpernschlag die Farb-Tarnwörter!
+            if (phase === 1) {
+                let farbeGefunden = false;
+                if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; farbeGefunden = true; }
+                else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; farbeGefunden = true; }
+                else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; farbeGefunden = true; }
+                else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; farbeGefunden = true; }
+
+                if (farbeGefunden) {
+                    phase = 2;
+                    logToConsole("🃏 [ANALYSE] Farbe im selben Satz gelockt: " + kartenFarbe + " -> Springe DIREKT in PHASE 2");
+                    // Falls Sie den Wert auch schon im selben Satz genannt haben, rechnen wir ihn direkt an!
+                    verarbeiteCodewoerter(text);
+                    return;
+                }
             }
             return;
         }
 
-        /* PHASE 1: KARTENFARBE */
-        if (phase === 1) {
-            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; phase = 2; verarbeiteCodewoerter(text); }
-            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; phase = 2; verarbeiteCodewoerter(text); }
-            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; phase = 2; verarbeiteCodewoerter(text); }
-            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; phase = 2; verarbeiteCodewoerter(text); }
-
-            if (kartenFarbe !== "") {
-                logToConsole("🔓 [PHASENWECHSEL] Farbe gelockt: " + kartenFarbe + " -> Springe in PHASE 2");
-            }
-            return;
-        }
-
-        /* PHASE 2: CODEWÖRTER */
+        /* =====================================================
+           🔓 PHASE 2: CODEWÖRTER SAMMELN
+           ===================================================== */
         if (phase === 2) {
             if (text.includes("reihenfolge")) {
                 verarbeiteCodewoerter(text);
@@ -236,7 +248,9 @@ if (!SpeechRecognition) {
             return;
         }
 
-        /* PHASE 3: NAME + DATUM */
+        /* =====================================================
+           🔓 PHASE 3: NAME + DATUM EXTRAKTION
+           ===================================================== */
         if (phase === 3) {
             const datumPosition = text.indexOf("dein datum");
             if (datumPosition > 0 && zuschauerName === "") {
@@ -272,10 +286,6 @@ if (!SpeechRecognition) {
             return;
         }
     }
-
-    /* GESTERNS ENTSPANNTER SCHRANKEN-RESTART FÜR ANDROID */
-    let neustartTimer = null;
-    let antiLoopSperre = false;
 
     recognition.onend = () => {
         if (phase < 4) {
