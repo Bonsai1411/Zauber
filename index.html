@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mystery Master</title>
+<title>Mystery Master - Labor-Modus</title>
 <style>
     html, body {
         margin: 0;
@@ -12,7 +12,7 @@
         height: 100%;
         background: #000;
         overflow: hidden;
-        font-family: 'Courier New', monospace;
+        font-family: monospace;
     }
     #emergency-exit {
         position: fixed;
@@ -22,76 +22,36 @@
         height: 25%;
         z-index: 99999;
     }
-    /* DIE INVISIBLE-KONSOLE: Aktiv für den Code, aber zu 100% unsichtbar fürs Publikum! */
+    /* DIE VOLL SICHTBARE EXPERIMENTEL-KONSOLE */
     #debug-console {
         display: block;
         position: fixed;
-        bottom: 10px;
+        top: 10px;
         left: 10px;
         right: 10px;
-        height: 55%;
+        bottom: 10px;
         box-sizing: border-box;
-        background: #0a0a0a;
-        color: #444;
+        background: #050505;
+        color: #00ff00; /* Giftgrüner Matrix-Look für perfekte Lesbarkeit */
         font-family: monospace;
-        font-size: 13px;
-        padding: 10px;
+        font-size: 12px;
+        line-height: 16px;
+        padding: 15px;
         overflow-y: auto;
-        border: 1px solid #1a1a1a;
-        z-index: 55555;
-        visibility: hidden; /* BÄM! Macht die Konsole für die Show unsichtbar! */
-    }
-    #show-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        background: #000 !important;
+        border: 2px solid #111;
         z-index: 99999;
-        opacity: 0;
-        transition: opacity 2.5s ease-in-out; /* Butterweiches Kino-Aufglühen */
-    }
-    #show-screen.visible {
-        opacity: 1 !important;
-    }
-    .magic-text {
-        color: #fff !important;
-        font-size: 24px;
-        text-shadow: 0 0 10px rgba(255,255,255,0.4);
-        margin: 15px 0;
-        letter-spacing: 2px;
-        text-align: center;
-    }
-    .magic-card {
-        color: #e50914 !important; /* Mörderisch scharfes Herz/Karo-Rot */
-        font-size: 52px;
-        font-weight: bold;
-        text-shadow: 0 0 25px rgba(229,9,20,0.8);
-        margin-top: 30px;
-        letter-spacing: 4px;
-    }
-    .black-card {
-        color: #fff !important;
-        text-shadow: 0 0 25px rgba(255,255,255,0.8);
     }
 </style>
 </head>
 <body>
 
 <div id="emergency-exit"></div>
-<div id="debug-console">--- DIGITALER KANAL AKTIV ---</div>
 
-<!-- STUMMES SHOW-LAYOUT -->
-<div id="show-screen">
-    <div class="magic-text" id="res-name">Zuschauer: --</div>
-    <div class="magic-text" id="res-datum">Datum: --</div>
-    <div class="magic-text magic-card" id="res-karte">♣♠♥♦</div>
-    <div class="magic-text" id="res-geburtstag" style="color: #ffd700 !important; font-weight: bold; margin-top: 25px;"></div>
+<div id="debug-console">
+    ==================================================<br>
+    🚀 SYSTEM-LABOR GESTARTET: WARTUNGSMANTEl AKTIV<br>
+    ==================================================<br>
+    [STATUS] Warte auf Phase 0 Trigger-Wort: „zusammen“...
 </div>
 
 <script>
@@ -104,14 +64,25 @@ let geburtsMonat = null;
 let geburtsDatum = "";
 let istGeburtstag = false;
 let verarbeitetesResultat = 0;
+let benutzerScrollt = false;
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const consoleDiv = document.getElementById("debug-console");
 
+consoleDiv.addEventListener('scroll', () => {
+    if (consoleDiv.scrollHeight - consoleDiv.scrollTop > consoleDiv.clientHeight + 30) {
+        benutzerScrollt = true;
+    } else {
+        benutzerScrollt = false;
+    }
+});
+
 function logToConsole(text) {
     if (consoleDiv) {
         consoleDiv.innerHTML += "<br>" + text;
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        if (!benutzerScrollt) {
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
     }
 }
 
@@ -142,25 +113,26 @@ function findeZahlen(text) {
 }
 
 function verarbeiteCodewoerter(text) {
-    if (text.includes("händen") || text.includes("haenden")) { kartenWert += 10; }
-    if (text.includes("einmal")) { kartenWert += 1; }
-    if (text.includes("zweimal")) { kartenWert += 2; }
-    if (text.includes("dreimal")) { kartenWert += 3; }
-    if (text.includes("viermal")) { kartenWert += 4; }
-    if (!text.includes("händen") && !text.includes("haenden") && text.includes("hand")) { kartenWert += 5; }
+    let etwasGefunden = false;
+    if (text.includes("händen") || text.includes("haenden")) { kartenWert += 10; etwasGefunden = true; logToConsole("👉 [CODE] HÄNDEN erkannt (+10)"); }
+    if (text.includes("einmal")) { kartenWert += 1; etwasGefunden = true; logToConsole("👉 [CODE] EINMAL erkannt (+1)"); }
+    if (text.includes("zweimal")) { kartenWert += 2; etwasGefunden = true; logToConsole("👉 [CODE] ZWEIMAL erkannt (+2)"); }
+    if (text.includes("dreimal")) { kartenWert += 3; etwasGefunden = true; logToConsole("👉 [CODE] DREIMAL erkannt (+3)"); }
+    if (text.includes("viermal")) { kartenWert += 4; etwasGefunden = true; logToConsole("👉 [CODE] VIERMAL erkannt (+4)"); }
+    if (!text.includes("händen") && !text.includes("haenden") && text.includes("hand")) { kartenWert += 5; etwasGefunden = true; logToConsole("👉 [CODE] HAND erkannt (+5)"); }
+    if (etwasGefunden) { logToConsole("📊 INTERNER ZWISCHENWERT: " + kartenWert); }
 }
 if (!SpeechRecognition) {
-    alert("Fehler: Browser unterstützt SpeechRecognition nicht.");
+    logToConsole("❌ FEHLER: Dieser Browser unterstützt webkitSpeechRecognition nicht!");
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
     recognition.continuous = false; 
     recognition.interimResults = false;
 
-    recognition.onstart = () => {};
-    recognition.onaudiostart = () => {};
-    recognition.onspeechstart = () => {};
+    recognition.onstart = () => { logToConsole("🎙️ [MIKROFON] Hardware geöffnet. Lausche auf Tonspur..."); };
     recognition.onerror = (event) => {
+        logToConsole("⚠️ [API-STATUS] Ruhezustand detektiert (" + event.error + ")");
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
             setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
         }
@@ -183,16 +155,15 @@ if (!SpeechRecognition) {
             .replace(/fünf\s+mal/g, "viermal")
             .replace(/reihem\s+folge/g, "reihenfolge")
             .replace(/reihen\s+folge/g, "reihenfolge")
-            .replace(/kartendeckt/g, "reihenfolge")   
-            .replace(/deckels/g, "reihenfolge")       
-            .replace(/beachte/g, "14")                
-            .replace(/achte/g, "8")                   
+            .replace(/garten/g, "reihenfolge") 
+            .replace(/t1/g, "heute") 
             .replace(/ranz/g, "franz")
             .replace(/wolf/g, "12")
             .replace(/dein\s+datum/g, "dein datum");
 
-        logToConsole("📝 GEHÖRT: „" + roherText + "“");
-        verarbeitetesResultat = event.results.length;
+        logToConsole("<br>📢 [GEHÖRT] „" + roherText + "“");
+        if (roherText !== text) { logToConsole("✨ [GEBÜGELT] „" + text + "“"); }
+        
         verarbeiteSprache(text);
         
         if (phase < 4) {
@@ -200,65 +171,69 @@ if (!SpeechRecognition) {
         }
     };
     function verarbeiteSprache(text) {
-        /* PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN */
+        logToConsole("🔍 [ANALYSE] Prüfe Text in Phase " + phase + "...");
+
+        /* PHASE 3 PRIORITY 1: DER ABSOLUTE NOT-AUSSTIEG GANZ OBEN */
         if (phase === 3) {
+            logToConsole("   -> Suche nach Abschluss-Signal: „verdeckt“, „verdeck“, „fertig“, „ende“, „schluss“");
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
+                logToConsole("🎯 [TRIGGER] ABSCHLUSS-SIGNAL ERKANNT!");
 
                 const heute = new Date();
                 istGeburtstag = geburtsTag === heute.getDate() && geburtsMonat === (heute.getMonth() + 1);
 
-                let finalerWertName = kartenWert;
-                if (kartenWert === 1 || kartenWert === 14 || kartenWert === 0) finalerWertName = "Ass";
-                else if (kartenWert === 11) finalerWertName = "Bube";
-                else if (kartenWert === 12) finalerWertName = "Dame";
-                else if (kartenWert === 13) finalerWertName = "König";
-
-                /* =====================================================
-                   BÄM!!! HIER ERWACHT DIE MAGISCHE INSZENIERUNG!
-                   ===================================================== */
-                document.getElementById("res-name").innerHTML = "Zuschauer: " + (zuschauerName || "(Gedankenübertragung aktiv)");
-                document.getElementById("res-datum").innerHTML = "Datum: " + (geburtsDatum || "(Mysterium)");
-                
-                let kartenAnzeige = document.getElementById("res-karte");
-                kartenAnzeige.innerHTML = kartenFarbe + " " + finalerWertName;
-                
-                if (kartenFarbe.includes("Pik") || kartenFarbe.includes("Kreuz")) {
-                    kartenAnzeige.classList.add("black-card");
-                }
-
-                if (istGeburtstag) {
-                    document.getElementById("res-geburtstag").innerHTML = "Alles Gute zum Geburtstag! 🎂✨";
-                }
-
-                // Zündet das unblockierbare, sichtbare Aufglühen im WebView!
-                document.getElementById("show-screen").classList.add("visible");
-                
-                try { recognition.stop(); } catch(e) {}
+                logToConsole("<br>================================================");
+                logToConsole("🏆 FINAL-REPORT DER MENTALMAGIE-LOGIK");
+                logToConsole("================================================");
+                logToConsole("🃏 KARTENFARBE: " + (kartenFarbe || "❌ (FEHLT!)"));
+                logToConsole("🔢 KARTENWERT: " + kartenWert);
+                logToConsole("👤 NAME: " + (zuschauerName || "❌ (KEIN NAME GEFUNDEN)"));
+                logToConsole("📅 DATUM: " + (geburtsDatum || "❌ (KEIN DATUM GEFUNDEN)"));
+                logToConsole("🎂 GEBURTSTAG HEUTE: " + (istGeburtstag ? "JA! 🎂🎈" : "NEIN"));
+                logToConsole("================================================");
+                logToConsole("🏁 ERGEBNIS-PRODUKTION ABGESCHLOSSEN. OHR SCHLÄFT EIN.");
+                recognition.stop();
                 return;
             }
         }
 
         /* PHASE 0: ZUSAMMEN */
         if (phase === 0) {
-            if (text.includes("zusammen")) { phase = 1; }
+            logToConsole("   -> Suche nach: „zusammen“");
+            if (text.includes("zusammen")) {
+                phase = 1;
+                logToConsole("🔓 [PHASENWECHSEL] Phase 0 beendet -> Springe in PHASE 1");
+                logToConsole("[STATUS] Suche nach Farben-Tarnwörtern: „passiert“=Pik, „geschehen“=Herz, „gewesen“=Kreuz, „gehabt“=Karo");
+            }
             return;
         }
 
         /* PHASE 1: KARTENFARBE */
         if (phase === 1) {
+            logToConsole("   -> Suche nach Farb-Triggern...");
             if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; phase = 2; verarbeiteCodewoerter(text); }
             else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; phase = 2; verarbeiteCodewoerter(text); }
             else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; phase = 2; verarbeiteCodewoerter(text); }
             else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; phase = 2; verarbeiteCodewoerter(text); }
+
+            if (kartenFarbe !== "") {
+                logToConsole("🔓 [PHASENWECHSEL] Farbe verriegelt: " + kartenFarbe + " -> Springe in PHASE 2");
+                logToConsole("[STATUS] Sammle mathematische Codewörter. Warte auf Signal-Wort: „reihenfolge“...");
+            } else {
+                logToConsole("   ⚠️ [LOGIK] Keine gültige Kartenfarbe im Satz gefunden.");
+            }
             return;
         }
 
         /* PHASE 2: CODEWÖRTER */
         if (phase === 2) {
+            logToConsole("   -> Suche nach: „reihenfolge“ und Codewörtern...");
             if (text.includes("reihenfolge")) {
                 verarbeiteCodewoerter(text);
                 phase = 3;
+                logToConsole("🔓 [PHASENWECHSEL] „reihenfolge“ blockiert Wert auf " + kartenWert + " -> Springe in PHASE 3");
+                logToConsole("[STATUS] Warte auf Name vor „dein datum“ und Zahlen/„heute“ nach „also“...");
                 return;
             }
             verarbeiteCodewoerter(text);
@@ -267,12 +242,15 @@ if (!SpeechRecognition) {
 
         /* PHASE 3: NAME + DATUM */
         if (phase === 3) {
+            logToConsole("   -> Extrahiere Name (vor „dein datum“) und Datum (nach „also“)...");
+            
             const datumPosition = text.indexOf("dein datum");
             if (datumPosition > 0 && zuschauerName === "") {
                 let nameTeil = text.substring(0, datumPosition).trim();
                 nameTeil = nameTeil.replace(/^[,.:;!? ]+|[,.:;!? ]+\$/g, "");
                 if (nameTeil.toLowerCase() !== "name" && nameTeil !== "") {
                     zuschauerName = nameTeil.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+                    logToConsole("👤 [PRODUKT] Name erfolgreich gesichert: " + zuschauerName);
                 }
             }
 
@@ -282,6 +260,7 @@ if (!SpeechRecognition) {
                     geburtsTag = echtzeitUhr.getDate();
                     geburtsMonat = echtzeitUhr.getMonth() + 1;
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
+                    logToConsole("📅 [PRODUKT] Spontan-Trigger „heute“ erkannt! Kalenderdatum gelockt: " + geburtsDatum);
                 }
             }
 
@@ -290,16 +269,19 @@ if (!SpeechRecognition) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
                 const zahlen = findeZahlen(nachAlso);
                 if (zahlen.length >= 2) {
-                    geburtsTag = zahlen;
-                    geburtsMonat = zahlen;
+                    geburtsTag = zahlen[0];
+                    geburtsMonat = zahlen[1];
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
+                    logToConsole("📅 [PRODUKT] Zahlen-Datum nach „also“ gesichert: " + geburtsDatum);
+                } else {
+                    logToConsole("   ⚠️ [LOGIK] Nach „also“ weniger als 2 gültige Zahlen im Array gefunden (" + zahlen.length + ")");
                 }
             }
             return;
         }
     }
 
-    /* ANTILOOP-SCHRANKE */
+    /* KANONISCHER WECHSELSTROM-RESTART WITH REAL LOGGING */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
@@ -310,6 +292,7 @@ if (!SpeechRecognition) {
             if (neustartTimer) { clearTimeout(neustartTimer); }
             neustartTimer = setTimeout(() => {
                 try {
+                    verarbeitetesResultat = 0; 
                     recognition.start();
                     setTimeout(() => { antiLoopSperre = false; }, 1000);
                 } catch (e) { antiLoopSperre = false; }
