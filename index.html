@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mystery Master - Labor-Modus</title>
+<title>Mystery Master - Labor 2.0</title>
 <style>
     html, body {
         margin: 0;
@@ -22,7 +22,6 @@
         height: 25%;
         z-index: 99999;
     }
-    /* DIE VOLL SICHTBARE EXPERIMENTEL-KONSOLE */
     #debug-console {
         display: block;
         position: fixed;
@@ -32,7 +31,7 @@
         bottom: 10px;
         box-sizing: border-box;
         background: #050505;
-        color: #00ff00; /* Giftgrüner Matrix-Look für perfekte Lesbarkeit */
+        color: #00ff00;
         font-family: monospace;
         font-size: 12px;
         line-height: 16px;
@@ -49,7 +48,7 @@
 
 <div id="debug-console">
     ==================================================<br>
-    🚀 SYSTEM-LABOR GESTARTET: WARTUNGSMANTEl AKTIV<br>
+    🚀 SYSTEM-LABOR 2.0: WECHSELSTROM-CHECK AKTIV<br>
     ==================================================<br>
     [STATUS] Warte auf Phase 0 Trigger-Wort: „zusammen“...
 </div>
@@ -127,12 +126,13 @@ if (!SpeechRecognition) {
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
-    recognition.continuous = false; 
+    recognition.continuous = false; // Zwingt Android zur legalen, sauberen Übergabe!
     recognition.interimResults = false;
 
-    recognition.onstart = () => { logToConsole("🎙️ [MIKROFON] Hardware geöffnet. Lausche auf Tonspur..."); };
+    recognition.onstart = () => { logToConsole("Anlasser gezündet. Lausche..."); };
+    
     recognition.onerror = (event) => {
-        logToConsole("⚠️ [API-STATUS] Ruhezustand detektiert (" + event.error + ")");
+        logToConsole("⚠️ [API-STATUS] Ruhezustand (" + event.error + ")");
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
             setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
         }
@@ -166,16 +166,14 @@ if (!SpeechRecognition) {
         
         verarbeiteSprache(text);
         
-        if (phase < 4) {
-            try { recognition.abort(); } catch(e) {}
-        }
+        // BÄM! Der künstliche .abort()-Riegel wurde vernichtet! 
+        // Wir lassen das Ohr ganz normal und legal ausschlafen!
     };
     function verarbeiteSprache(text) {
         logToConsole("🔍 [ANALYSE] Prüfe Text in Phase " + phase + "...");
 
         /* PHASE 3 PRIORITY 1: DER ABSOLUTE NOT-AUSSTIEG GANZ OBEN */
         if (phase === 3) {
-            logToConsole("   -> Suche nach Abschluss-Signal: „verdeckt“, „verdeck“, „fertig“, „ende“, „schluss“");
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
                 logToConsole("🎯 [TRIGGER] ABSCHLUSS-SIGNAL ERKANNT!");
@@ -192,7 +190,6 @@ if (!SpeechRecognition) {
                 logToConsole("📅 DATUM: " + (geburtsDatum || "❌ (KEIN DATUM GEFUNDEN)"));
                 logToConsole("🎂 GEBURTSTAG HEUTE: " + (istGeburtstag ? "JA! 🎂🎈" : "NEIN"));
                 logToConsole("================================================");
-                logToConsole("🏁 ERGEBNIS-PRODUKTION ABGESCHLOSSEN. OHR SCHLÄFT EIN.");
                 recognition.stop();
                 return;
             }
@@ -200,18 +197,15 @@ if (!SpeechRecognition) {
 
         /* PHASE 0: ZUSAMMEN */
         if (phase === 0) {
-            logToConsole("   -> Suche nach: „zusammen“");
             if (text.includes("zusammen")) {
                 phase = 1;
                 logToConsole("🔓 [PHASENWECHSEL] Phase 0 beendet -> Springe in PHASE 1");
-                logToConsole("[STATUS] Suche nach Farben-Tarnwörtern: „passiert“=Pik, „geschehen“=Herz, „gewesen“=Kreuz, „gehabt“=Karo");
             }
             return;
         }
 
         /* PHASE 1: KARTENFARBE */
         if (phase === 1) {
-            logToConsole("   -> Suche nach Farb-Triggern...");
             if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; phase = 2; verarbeiteCodewoerter(text); }
             else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; phase = 2; verarbeiteCodewoerter(text); }
             else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; phase = 2; verarbeiteCodewoerter(text); }
@@ -219,21 +213,16 @@ if (!SpeechRecognition) {
 
             if (kartenFarbe !== "") {
                 logToConsole("🔓 [PHASENWECHSEL] Farbe verriegelt: " + kartenFarbe + " -> Springe in PHASE 2");
-                logToConsole("[STATUS] Sammle mathematische Codewörter. Warte auf Signal-Wort: „reihenfolge“...");
-            } else {
-                logToConsole("   ⚠️ [LOGIK] Keine gültige Kartenfarbe im Satz gefunden.");
             }
             return;
         }
 
         /* PHASE 2: CODEWÖRTER */
         if (phase === 2) {
-            logToConsole("   -> Suche nach: „reihenfolge“ und Codewörtern...");
             if (text.includes("reihenfolge")) {
                 verarbeiteCodewoerter(text);
                 phase = 3;
                 logToConsole("🔓 [PHASENWECHSEL] „reihenfolge“ blockiert Wert auf " + kartenWert + " -> Springe in PHASE 3");
-                logToConsole("[STATUS] Warte auf Name vor „dein datum“ und Zahlen/„heute“ nach „also“...");
                 return;
             }
             verarbeiteCodewoerter(text);
@@ -242,18 +231,6 @@ if (!SpeechRecognition) {
 
         /* PHASE 3: NAME + DATUM */
         if (phase === 3) {
-            logToConsole("   -> Extrahiere Name (vor „dein datum“) und Datum (nach „also“)...");
-            
-            const datumPosition = text.indexOf("dein datum");
-            if (datumPosition > 0 && zuschauerName === "") {
-                let nameTeil = text.substring(0, datumPosition).trim();
-                nameTeil = nameTeil.replace(/^[,.:;!? ]+|[,.:;!? ]+\$/g, "");
-                if (nameTeil.toLowerCase() !== "name" && nameTeil !== "") {
-                    zuschauerName = nameTeil.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-                    logToConsole("👤 [PRODUKT] Name erfolgreich gesichert: " + zuschauerName);
-                }
-            }
-
             if (text.includes("heute") || text.includes("ist heute") || text.includes("ist also heute")) {
                 if (geburtsTag === null) {
                     const echtzeitUhr = new Date();
@@ -264,24 +241,32 @@ if (!SpeechRecognition) {
                 }
             }
 
+            const datumPosition = text.indexOf("dein datum");
+            if (datumPosition > 0 && zuschauerName === "") {
+                let nameTeil = text.substring(0, datumPosition).trim();
+                nameTeil = nameTeil.replace(/^[,.:;!? ]+|[,.:;!? ]+\$/g, "");
+                if (nameTeil.toLowerCase() !== "name" && nameTeil !== "") {
+                    zuschauerName = nameTeil.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+                    logToConsole("👤 [PRODUKT] Name gesichert: " + zuschauerName);
+                }
+            }
+
             const alsoPosition = text.indexOf("also");
             if (alsoPosition !== -1 && geburtsTag === null) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
                 const zahlen = findeZahlen(nachAlso);
                 if (zahlen.length >= 2) {
-                    geburtsTag = zahlen[0];
-                    geburtsMonat = zahlen[1];
+                    geburtsTag = zahlen;
+                    geburtsMonat = zahlen;
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                    logToConsole("📅 [PRODUKT] Zahlen-Datum nach „also“ gesichert: " + geburtsDatum);
-                } else {
-                    logToConsole("   ⚠️ [LOGIK] Nach „also“ weniger als 2 gültige Zahlen im Array gefunden (" + zahlen.length + ")");
+                    logToConsole("📅 [PRODUKT] Zahlen-Datum gesichert: " + geburtsDatum);
                 }
             }
             return;
         }
     }
 
-    /* KANONISCHER WECHSELSTROM-RESTART WITH REAL LOGGING */
+    /* GESTERNS REINER, LEGALER WECHSELSTROM-RESTART WITH EISERNE SCHRANKE */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
@@ -296,7 +281,7 @@ if (!SpeechRecognition) {
                     recognition.start();
                     setTimeout(() => { antiLoopSperre = false; }, 1000);
                 } catch (e) { antiLoopSperre = false; }
-            }, 400); 
+            }, 800); // 800ms entspannte Atempause, damit Android völlig legal umschaltet
         }
     };
 
