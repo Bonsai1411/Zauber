@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mystery Master - Labor 2.0</title>
+<title>Mystery Master - Labor 2.5</title>
 <style>
     html, body {
         margin: 0;
@@ -31,7 +31,7 @@
         bottom: 10px;
         box-sizing: border-box;
         background: #050505;
-        color: #00ff00;
+        color: #00ff00; /* Giftgrüner Matrix-Look für perfekte Lesbarkeit */
         font-family: monospace;
         font-size: 12px;
         line-height: 16px;
@@ -48,9 +48,9 @@
 
 <div id="debug-console">
     ==================================================<br>
-    🚀 SYSTEM-LABOR 2.0: WECHSELSTROM-CHECK AKTIV<br>
+    🚀 SYSTEM-LABOR 2.5: FLÜSSIGER KANAL AKTIV<br>
     ==================================================<br>
-    [STATUS] Warte auf Phase 0 Trigger-Wort: „zusammen“...
+    [STATUS] Warte auf Phase 0: „zusammen“...
 </div>
 
 <script>
@@ -111,28 +111,32 @@ function findeZahlen(text) {
     return zahlen;
 }
 
+// Codewörter rechnen absolut sauber zusammen
 function verarbeiteCodewoerter(text) {
     let etwasGefunden = false;
-    if (text.includes("händen") || text.includes("haenden")) { kartenWert += 10; etwasGefunden = true; logToConsole("👉 [CODE] HÄNDEN erkannt (+10)"); }
-    if (text.includes("einmal")) { kartenWert += 1; etwasGefunden = true; logToConsole("👉 [CODE] EINMAL erkannt (+1)"); }
-    if (text.includes("zweimal")) { kartenWert += 2; etwasGefunden = true; logToConsole("👉 [CODE] ZWEIMAL erkannt (+2)"); }
-    if (text.includes("dreimal")) { kartenWert += 3; etwasGefunden = true; logToConsole("👉 [CODE] DREIMAL erkannt (+3)"); }
-    if (text.includes("viermal")) { kartenWert += 4; etwasGefunden = true; logToConsole("👉 [CODE] VIERMAL erkannt (+4)"); }
-    if (!text.includes("händen") && !text.includes("haenden") && text.includes("hand")) { kartenWert += 5; etwasGefunden = true; logToConsole("👉 [CODE] HAND erkannt (+5)"); }
-    if (etwasGefunden) { logToConsole("📊 INTERNER ZWISCHENWERT: " + kartenWert); }
+    if (text.includes("händen") || text.includes("haenden")) { kartenWert += 10; etwasGefunden = true; logToConsole("👉 [CODEWORT] HÄNDEN erkannt (+10)"); }
+    if (text.includes("einmal")) { kartenWert += 1; etwasGefunden = true; logToConsole("👉 [CODEWORT] EINMAL erkannt (+1)"); }
+    if (text.includes("zweimal")) { kartenWert += 2; etwasGefunden = true; logToConsole("👉 [CODEWORT] ZWEIMAL erkannt (+2)"); }
+    if (text.includes("dreimal")) { kartenWert += 3; etwasGefunden = true; logToConsole("👉 [CODEWORT] DREIMAL erkannt (+3)"); }
+    if (text.includes("viermal")) { kartenWert += 4; etwasGefunden = true; logToConsole("👉 [CODEWORT] VIERMAL erkannt (+4)"); }
+    if (!text.includes("händen") && !text.includes("haenden") && text.includes("hand")) { kartenWert += 5; etwasGefunden = true; logToConsole("👉 [CODEWORT] HAND erkannt (+5)"); }
+    if (etwasGefunden) { logToConsole("📊 RECHENWERT AKTUELL: " + kartenWert); }
 }
 if (!SpeechRecognition) {
     logToConsole("❌ FEHLER: Dieser Browser unterstützt webkitSpeechRecognition nicht!");
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
-    recognition.continuous = false; // Zwingt Android zur legalen, sauberen Übergabe!
+    recognition.continuous = false; // Zwingt Android zur legalen, sauberen Ergebnisübergabe
     recognition.interimResults = false;
 
-    recognition.onstart = () => { logToConsole("Anlasser gezündet. Lausche..."); };
-    
+    // Diese System-Meldungen loggen wir ABSICHTLICH nicht, damit die Schleife verschwindet!
+    recognition.onstart = () => {};
+    recognition.onaudiostart = () => {};
+    recognition.onspeechstart = () => {};
+
     recognition.onerror = (event) => {
-        logToConsole("⚠️ [API-STATUS] Ruhezustand (" + event.error + ")");
+        // Timeouts werden lautlos im stummen Hintergrund reanimiert
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
             setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
         }
@@ -141,9 +145,9 @@ if (!SpeechRecognition) {
     recognition.onresult = (event) => {
         let letzterIndex = event.results.length - 1;
         let result = event.results[letzterIndex];
-        if (!result || !result) { return; }
+        if (!result || !result[0]) { return; }
         
-        let roherText = result.transcript;
+        let roherText = result[0].transcript;
         if (!roherText) { return; }
         roherText = roherText.toLowerCase().trim();
 
@@ -166,13 +170,15 @@ if (!SpeechRecognition) {
         
         verarbeiteSprache(text);
         
-        // BÄM! Der künstliche .abort()-Riegel wurde vernichtet! 
-        // Wir lassen das Ohr ganz normal und legal ausschlafen!
+        // Der Frischluft-Wechselstrom pustet das Ohr nach jedem verstandenen Satz legal durch
+        if (phase < 4) {
+            try { recognition.abort(); } catch(e) {}
+        }
     };
     function verarbeiteSprache(text) {
-        logToConsole("🔍 [ANALYSE] Prüfe Text in Phase " + phase + "...");
+        logToConsole("🔍 [ANALYSE] Prüfe Phase " + phase + "...");
 
-        /* PHASE 3 PRIORITY 1: DER ABSOLUTE NOT-AUSSTIEG GANZ OBEN */
+        /* PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN (Rettet das Show-Finale!) */
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
@@ -190,6 +196,7 @@ if (!SpeechRecognition) {
                 logToConsole("📅 DATUM: " + (geburtsDatum || "❌ (KEIN DATUM GEFUNDEN)"));
                 logToConsole("🎂 GEBURTSTAG HEUTE: " + (istGeburtstag ? "JA! 🎂🎈" : "NEIN"));
                 logToConsole("================================================");
+                logToConsole("🏁 ERGEBNIS-PRODUKTION VENSELT. OHR SCHLÄFT EIN.");
                 recognition.stop();
                 return;
             }
@@ -199,7 +206,7 @@ if (!SpeechRecognition) {
         if (phase === 0) {
             if (text.includes("zusammen")) {
                 phase = 1;
-                logToConsole("🔓 [PHASENWECHSEL] Phase 0 beendet -> Springe in PHASE 1");
+                logToConsole("🔓 [PHASENWECHSEL] Phase 0 -> Springe in PHASE 1");
             }
             return;
         }
@@ -212,7 +219,7 @@ if (!SpeechRecognition) {
             else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; phase = 2; verarbeiteCodewoerter(text); }
 
             if (kartenFarbe !== "") {
-                logToConsole("🔓 [PHASENWECHSEL] Farbe verriegelt: " + kartenFarbe + " -> Springe in PHASE 2");
+                logToConsole("🔓 [PHASENWECHSEL] Farbe gelockt: " + kartenFarbe + " -> Springe in PHASE 2");
             }
             return;
         }
@@ -222,7 +229,7 @@ if (!SpeechRecognition) {
             if (text.includes("reihenfolge")) {
                 verarbeiteCodewoerter(text);
                 phase = 3;
-                logToConsole("🔓 [PHASENWECHSEL] „reihenfolge“ blockiert Wert auf " + kartenWert + " -> Springe in PHASE 3");
+                logToConsole("🔓 [PHASENWECHSEL] „reihenfolge“ verriegelt Wert -> Springe in PHASE 3");
                 return;
             }
             verarbeiteCodewoerter(text);
@@ -231,16 +238,6 @@ if (!SpeechRecognition) {
 
         /* PHASE 3: NAME + DATUM */
         if (phase === 3) {
-            if (text.includes("heute") || text.includes("ist heute") || text.includes("ist also heute")) {
-                if (geburtsTag === null) {
-                    const echtzeitUhr = new Date();
-                    geburtsTag = echtzeitUhr.getDate();
-                    geburtsMonat = echtzeitUhr.getMonth() + 1;
-                    geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                    logToConsole("📅 [PRODUKT] Spontan-Trigger „heute“ erkannt! Kalenderdatum gelockt: " + geburtsDatum);
-                }
-            }
-
             const datumPosition = text.indexOf("dein datum");
             if (datumPosition > 0 && zuschauerName === "") {
                 let nameTeil = text.substring(0, datumPosition).trim();
@@ -251,13 +248,23 @@ if (!SpeechRecognition) {
                 }
             }
 
+            if (text.includes("heute") || text.includes("ist heute") || text.includes("ist also heute")) {
+                if (geburtsTag === null) {
+                    const echtzeitUhr = new Date();
+                    geburtsTag = echtzeitUhr.getDate();
+                    geburtsMonat = echtzeitUhr.getMonth() + 1;
+                    geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
+                    logToConsole("📅 [PRODUKT] Trigger „heute“ erkannt. Kalenderdatum gelockt: " + geburtsDatum);
+                }
+            }
+
             const alsoPosition = text.indexOf("also");
             if (alsoPosition !== -1 && geburtsTag === null) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
                 const zahlen = findeZahlen(nachAlso);
                 if (zahlen.length >= 2) {
-                    geburtsTag = zahlen;
-                    geburtsMonat = zahlen;
+                    geburtsTag = zahlen[0];
+                    geburtsMonat = zahlen[1];
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
                     logToConsole("📅 [PRODUKT] Zahlen-Datum gesichert: " + geburtsDatum);
                 }
@@ -266,7 +273,7 @@ if (!SpeechRecognition) {
         }
     }
 
-    /* GESTERNS REINER, LEGALER WECHSELSTROM-RESTART WITH EISERNE SCHRANKE */
+    /* GESTERNS ENTSPANNTER SCHRANKEN-RESTART FÜR ANDROID */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
@@ -281,14 +288,14 @@ if (!SpeechRecognition) {
                     recognition.start();
                     setTimeout(() => { antiLoopSperre = false; }, 1000);
                 } catch (e) { antiLoopSperre = false; }
-            }, 800); // 800ms entspannte Atempause, damit Android völlig legal umschaltet
+            }, 800); 
         }
     };
 
     try { recognition.start(); } catch(e) {}
 }
 
-/* NOT-AUS */
+/* NOT-AUS (3 Sek oben links gedrückt halten zum Neuladen) */
 let exitTimer = null;
 document.getElementById("emergency-exit").addEventListener("touchstart", () => { exitTimer = setTimeout(() => { location.reload(); }, 3000); });
 document.getElementById("emergency-exit").addEventListener("touchend", () => { clearTimeout(exitTimer); });
