@@ -218,18 +218,16 @@ if (!SpeechRecognition) {
         }
 
         /* =====================================================
-           🔓 PHASE 2: IHRE NEUE TABELLEN-MATRICES (OHNE NACKTE ZAHLEN!)
+           🔓 PHASE 2: IHRE NEUE TABELLEN-LOGIK (ZAHNLEN-AUSSCHLUSS!)
            ===================================================== */
         if (phase === 2) {
-            // Erst prüfen, ob der Deckel draufgemacht wird
             if (text.includes("reihenfolge")) {
                 
-                // BÄM!!! HIER RECHNET DIE LOGIK IHRE TABELLE EXAKT AUS:
                 let basis = 0;
                 if (text.includes("händen") || text.includes("haenden")) {
-                    basis = 9; // Zeilen für Bube, Dame, König
+                    basis = 9; 
                 } else if (text.includes("hand")) {
-                    basis = 4; // Zeilen für 5, 6, 7, 8, 9
+                    basis = 4; 
                 }
 
                 let addition = 0;
@@ -240,12 +238,9 @@ if (!SpeechRecognition) {
 
                 kartenWert = basis + addition;
 
-                // Sonderfall-Korrektur aus Ihrer Tabelle für glatte Werte:
-                // Wenn "mit deiner eigenen Hand das Deck abgehoben" (ohne einmal/zweimal), ist es die Karte 5!
                 if (basis === 4 && addition === 0) kartenWert = 5;
-                // Wenn "mit deinen eigenen Händen das Deck abgehoben", ist es der Bube (11)!
                 if (basis === 9 && addition === 0) kartenWert = 11;
-                // Wenn kein Hand/Hände genannt wurde, sondern nur glatt abgehoben wurde (z.B. Zeile 2, 3, 4)
+                
                 if (basis === 0 && addition === 0) {
                     if (text.includes("viermal")) kartenWert = 4;
                     else if (text.includes("dreimal")) kartenWert = 3;
@@ -261,7 +256,7 @@ if (!SpeechRecognition) {
         }
 
         /* =====================================================
-           🔓 PHASE 3: NAME + DATUM (ZAHNLEN-ZULASSUNG NUR HIER!)
+           🔓 PHASE 3: NAME + DATUM (ZAHLEN ZULASSUNG NUR HIER!)
            ===================================================== */
         if (phase === 3) {
             const datumPosition = text.indexOf("dein datum");
@@ -320,7 +315,6 @@ if (!SpeechRecognition) {
 
     try { recognition.start(); } catch(e) {}
 }
-
 
 /* NOT-AUS (3 Sek oben links gedrückt halten zum Neuladen) */
 let exitTimer = null;
