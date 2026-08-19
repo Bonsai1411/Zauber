@@ -122,16 +122,12 @@ function verarbeiteCodewoerter(text) {
     if (etwasGefunden) { logToConsole("📊 RECHENWERT AKTUELL: " + kartenWert); }
 }
 if (!SpeechRecognition) {
-    logToConsole("❌ FEHLER: Dieser Browser unterstützt webkitSpeechRecognition nicht!");
+    logToConsole("❌ FEHLER: Dieser Browser unterstützt SpeechRecognition nicht.");
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
-    recognition.continuous = false; // UR-ZUSTAND: Garantiert den flüssigen Android-Wechselstrom
+    recognition.continuous = false; // Garantiert den flüssigen Android-Wechselstrom
     recognition.interimResults = false;
-
-    recognition.onstart = () => {};
-    recognition.onaudiostart = () => {};
-    recognition.onspeechstart = () => {};
 
     recognition.onerror = (event) => {
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
@@ -140,44 +136,41 @@ if (!SpeechRecognition) {
     };
 
     recognition.onresult = (event) => {
-        for (let i = verarbeitetesResultat; i < event.results.length; i++) {
-            const result = event.results[i];
-            if (!result || !result[0]) { continue; }
-            let roherText = result[0].transcript;
-            if (!roherText) { continue; }
-            roherText = roherText.toLowerCase().trim();
-            verarbeitetesResultat = i + 1;
+        let letzterIndex = event.results.length - 1;
+        let result = event.results[letzterIndex];
+        if (!result || !result) { return; }
+        
+        let roherText = result.transcript;
+        if (!roherText) { return; }
+        roherText = roherText.toLowerCase().trim();
 
-            /* =====================================================
-               ✨ DAS HOCHGRADIG JUSTIERTE BÜHLEN-BÜGEL-SKALPELL
-               Verschmilzt und korrigiert alle Hörfehler aus Ihren Protokollen!
-               ===================================================== */
-            let text = roherText
-                .replace(/ein\s+mal/g, "einmal")
-                .replace(/zwei\s+mal/g, "zweimal")
-                .replace(/drei\s+mal/g, "dreimal")
-                .replace(/vier\s+mal/g, "viermal")
-                .replace(/fünf\s+mal/g, "viermal")
-                .replace(/reihem\s+folge/g, "reihenfolge")
-                .replace(/reihen\s+folge/g, "reihenfolge")
-                .replace(/garten/g, "reihenfolge")       // FIX FÜR TEST 3 (garten -> reihenfolge)
-                .replace(/kartendeckt/g, "reihenfolge")   // FIX FÜR TEST 5 (kartendeckt -> reihenfolge)
-                .replace(/deckels/g, "reihenfolge")       // FIX FÜR TEST 6 (deckels -> reihenfolge)
-                .replace(/beachte/g, "14")                // FIX FÜR TEST 6 (beachte -> 14)
-                .replace(/achte/g, "8")                   // FIX FÜR TEST 4 (achte -> 8)
-                .replace(/ranz/g, "franz")                // FIX FÜR TEST 2 (ranz -> franz)
-                .replace(/wolf/g, "12")                   // FIX FÜR TEST 14 (wolf -> 12)
-                .replace(/dein\s+datum/g, "dein datum");
+        /* =====================================================
+           ✨ SCHARFES TEXT-BÜGEL-SKALPELL GEGEN HÖRFEHLER
+           ===================================================== */
+        let text = roherText
+            .replace(/ein\s+mal/g, "einmal")
+            .replace(/zwei\s+mal/g, "zweimal")
+            .replace(/drei\s+mal/g, "dreimal")
+            .replace(/vier\s+mal/g, "viermal")
+            .replace(/fünf\s+mal/g, "viermal")
+            .replace(/reihem\s+folge/g, "reihenfolge")
+            .replace(/reihen\s+folge/g, "reihenfolge")
+            .replace(/garten/g, "reihenfolge") 
+            .replace(/t1/g, "heute") 
+            .replace(/ranz/g, "franz")
+            .replace(/wolf/g, "12")
+            .replace(/dein\s+datum/g, "dein datum");
 
-            logToConsole("<br>📢 [GEHÖRT] „" + roherText + "“");
-            if (roherText !== text) { logToConsole("✨ [GEBÜGELT] „" + text + "“"); }
-            verarbeiteSprache(text);
-        }
+        logToConsole("<br>📢 [GEHÖRT] „" + roherText + "“");
+        verarbeiteSprache(text);
     };
+
     function verarbeiteSprache(text) {
         logToConsole("🔍 [ANALYSE] Prüfe Phase " + phase + "...");
 
-        /* PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG GANZ OBEN */
+        /* =====================================================
+           🔓 PHASE 3: ABSCHLUSS-TRIGGER GANZ OBEN (BÜHNEN-NOT-AUS)
+           ===================================================== */
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
                 phase = 4;
@@ -187,55 +180,89 @@ if (!SpeechRecognition) {
                 istGeburtstag = geburtsTag === heute.getDate() && geburtsMonat === (heute.getMonth() + 1);
 
                 logToConsole("<br>================================================");
-                logToConsole("🏆 FINAL-REPORT DER MENTALMAGIE-LOGIK");
+                logToConsole("🏆 FINAL-REPORT (IHRE NEUE TABELLEN-LOGIK)");
                 logToConsole("================================================");
                 logToConsole("🃏 KARTENFARBE: " + (kartenFarbe || "❌ (FEHLT!)"));
-                logToConsole("🔢 KARTENWERT: " + kartenWert);
-                logToConsole("👤 NAME: " + (zuschauerName || "❌ (KEIN NAME GEFUNDEN)"));
-                logToConsole("📅 DATUM: " + (geburtsDatum || "❌ (KEIN DATUM GEFUNDEN)"));
-                logToConsole("🎂 GEBURTSTAG HEUTE: " + (istGeburtstag ? "JA! 🎂🎈" : "NEIN"));
+                logToConsole("🔢 BERECHNETER WERT: " + kartenWert);
+                logToConsole("👤 NAME: " + (zuschauerName || "❌ (KEIN NAME)"));
+                logToConsole("📅 DATUM: " + (geburtsDatum || "❌ (KEIN DATUM)"));
+                logToConsole("🎂 GEBURTSTAG: " + (istGeburtstag ? "JA! 🎂🎈" : "NEIN"));
                 logToConsole("================================================");
                 recognition.stop();
                 return;
             }
         }
 
-        /* PHASE 0: ZUSAMMEN */
+        /* =====================================================
+           🔓 PHASE 0 & 1: DRAMATISCHE PAUSE ERZWINGEN
+           ===================================================== */
         if (phase === 0) {
             if (text.includes("zusammen")) {
                 phase = 1;
-                logToConsole("🔓 [PHASENWECHSEL] Phase 0 -> Springe in PHASE 1");
+                logToConsole("🔓 [PHASENWECHSEL] „zusammen“ erkannt -> Springe in PHASE 1");
+                logToConsole("⏳ [INFO] Machen Sie jetzt Ihre dramatische Pause! Das Ohr startet frisch.");
             }
             return;
         }
 
-        /* PHASE 1: KARTENFARBE (Panzersicher über .includes) */
         if (phase === 1) {
-            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; }
-            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; }
-            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; }
-            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; }
+            if (text.includes("passiert")) { kartenFarbe = "Pik ♠"; phase = 2; }
+            else if (text.includes("geschehen")) { kartenFarbe = "Herz ♥"; phase = 2; }
+            else if (text.includes("gewesen")) { kartenFarbe = "Kreuz ♣"; phase = 2; }
+            else if (text.includes("gehabt")) { kartenFarbe = "Karo ♦"; phase = 2; }
 
             if (kartenFarbe !== "") {
-                phase = 2;
-                logToConsole("🔓 [PHASENWECHSEL] Farbe gelockt: " + kartenFarbe + " -> Springe in PHASE 2");
+                logToConsole("🃏 [PHASENWECHSEL] Farbe gelockt: " + kartenFarbe + " -> Springe in PHASE 2");
             }
             return;
         }
 
-        /* PHASE 2: CODEWÖRTER */
+        /* =====================================================
+           🔓 PHASE 2: IHRE NEUE TABELLEN-MATRICES (OHNE NACKTE ZAHLEN!)
+           ===================================================== */
         if (phase === 2) {
+            // Erst prüfen, ob der Deckel draufgemacht wird
             if (text.includes("reihenfolge")) {
-                verarbeiteCodewoerter(text);
+                
+                // BÄM!!! HIER RECHNET DIE LOGIK IHRE TABELLE EXAKT AUS:
+                let basis = 0;
+                if (text.includes("händen") || text.includes("haenden")) {
+                    basis = 9; // Zeilen für Bube, Dame, König
+                } else if (text.includes("hand")) {
+                    basis = 4; // Zeilen für 5, 6, 7, 8, 9
+                }
+
+                let addition = 0;
+                if (text.includes("einmal")) addition = 1;
+                else if (text.includes("zweimal")) addition = 2;
+                else if (text.includes("dreimal")) addition = 3;
+                else if (text.includes("viermal")) addition = 4;
+
+                kartenWert = basis + addition;
+
+                // Sonderfall-Korrektur aus Ihrer Tabelle für glatte Werte:
+                // Wenn "mit deiner eigenen Hand das Deck abgehoben" (ohne einmal/zweimal), ist es die Karte 5!
+                if (basis === 4 && addition === 0) kartenWert = 5;
+                // Wenn "mit deinen eigenen Händen das Deck abgehoben", ist es der Bube (11)!
+                if (basis === 9 && addition === 0) kartenWert = 11;
+                // Wenn kein Hand/Hände genannt wurde, sondern nur glatt abgehoben wurde (z.B. Zeile 2, 3, 4)
+                if (basis === 0 && addition === 0) {
+                    if (text.includes("viermal")) kartenWert = 4;
+                    else if (text.includes("dreimal")) kartenWert = 3;
+                    else if (text.includes("zweimal")) kartenWert = 2;
+                    else if (text.includes("einmal")) kartenWert = 1;
+                }
+
+                logToConsole("🔒 [TABELLEN-MATCH] Wert unumstößlich eingeloggt: " + kartenWert + " -> Springe in PHASE 3");
                 phase = 3;
-                logToConsole("🔓 [PHASENWECHSEL] „reihenfolge“ verriegelt Wert -> Springe in PHASE 3");
                 return;
             }
-            verarbeiteCodewoerter(text);
             return;
         }
 
-        /* PHASE 3: NAME + DATUM */
+        /* =====================================================
+           🔓 PHASE 3: NAME + DATUM (ZAHNLEN-ZULASSUNG NUR HIER!)
+           ===================================================== */
         if (phase === 3) {
             const datumPosition = text.indexOf("dein datum");
             if (datumPosition > 0 && zuschauerName === "") {
@@ -253,7 +280,7 @@ if (!SpeechRecognition) {
                     geburtsTag = echtzeitUhr.getDate();
                     geburtsMonat = echtzeitUhr.getMonth() + 1;
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
-                    logToConsole("📅 [PRODUKT] Trigger „heute“ erkannt. Kalenderdatum gelockt: " + geburtsDatum);
+                    logToConsole("📅 [PRODUKT] Trigger „heute“ erkannt! Kalenderdatum gelockt: " + geburtsDatum);
                 }
             }
 
@@ -262,7 +289,6 @@ if (!SpeechRecognition) {
                 const nachAlso = text.substring(alsoPosition + 4).trim();
                 const zahlen = findeZahlen(nachAlso);
                 if (zahlen.length >= 2) {
-                    // MÄCHTIGER ARRAY-FIX: Wir ziehen die Werte absolut einzeln heraus!
                     geburtsTag = zahlen[0];
                     geburtsMonat = zahlen[1];
                     geburtsDatum = String(geburtsTag).padStart(2, "0") + "." + String(geburtsMonat).padStart(2, "0");
@@ -273,7 +299,7 @@ if (!SpeechRecognition) {
         }
     }
 
-    /* GESTERNS REINER, UNZAPPLIGER WECHSELSTROM-RESTART */
+    /* WECHSELSTROM-RESTART WITH ANTI-LOOP */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
@@ -294,6 +320,7 @@ if (!SpeechRecognition) {
 
     try { recognition.start(); } catch(e) {}
 }
+
 
 /* NOT-AUS (3 Sek oben links gedrückt halten zum Neuladen) */
 let exitTimer = null;
