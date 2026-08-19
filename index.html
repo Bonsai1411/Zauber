@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mystery Master - Labor 3.0</title>
+<title>Mystery Master - Labor 4.0</title>
 <style>
     html, body {
         margin: 0;
@@ -48,7 +48,7 @@
 
 <div id="debug-console">
     ==================================================<br>
-    🚀 SYSTEM-LABOR 3.0: RETRO-FUNDAMENT AKTIV<br>
+    🚀 SYSTEM-LABOR 4.0: RETRO-GEHÄRTET & ZÜNDBEREIT<br>
     ==================================================<br>
     [STATUS] Warte auf Phase 0: „zusammen“...
 </div>
@@ -110,66 +110,67 @@ function findeZahlen(text) {
     }
     return zahlen;
 }
-
-function verarbeiteCodewoerter(text) {
-    let etwasGefunden = false;
-    if (text.includes("händen") || text.includes("haenden")) { kartenWert += 10; etwasGefunden = true; logToConsole("👉 [CODE] HÄNDEN erkannt (+10)"); }
-    if (text.includes("einmal")) { kartenWert += 1; etwasGefunden = true; logToConsole("👉 [CODE] EINMAL erkannt (+1)"); }
-    if (text.includes("zweimal")) { kartenWert += 2; etwasGefunden = true; logToConsole("👉 [CODE] ZWEIMAL erkannt (+2)"); }
-    if (text.includes("dreimal")) { kartenWert += 3; etwasGefunden = true; logToConsole("👉 [CODE] DREIMAL erkannt (+3)"); }
-    if (text.includes("viermal")) { kartenWert += 4; etwasGefunden = true; logToConsole("👉 [CODE] VIERMAL erkannt (+4)"); }
-    if (!text.includes("händen") && !text.includes("haenden") && text.includes("hand")) { kartenWert += 5; etwasGefunden = true; logToConsole("👉 [CODE] HAND erkannt (+5)"); }
-    if (etwasGefunden) { logToConsole("📊 RECHENWERT AKTUELL: " + kartenWert); }
-}
+</script>
+<script>
 if (!SpeechRecognition) {
-    logToConsole("❌ FEHLER: Dieser Browser unterstützt SpeechRecognition nicht.");
+    logToConsole("❌ FEHLER: Dieser Browser unterstützt webkitSpeechRecognition nicht!");
 } else {
     const recognition = new SpeechRecognition();
     recognition.lang = "de-DE";
-    recognition.continuous = false; // Garantiert den flüssigen Android-Wechselstrom
+    recognition.continuous = false; // UR-EINSTELLUNG: Garantiert den flüssigen Android-Wechselstrom
     recognition.interimResults = false;
 
+    recognition.onstart = () => {};
+    recognition.onaudiostart = () => {};
+    recognition.onspeechstart = () => {};
+
     recognition.onerror = (event) => {
+        logToConsole("⚠️ [API-STATUS] Ruhezustand detektiert (" + event.error + ")");
         if ((event.error === 'no-speech' || event.error === 'aborted') && phase < 4) {
             setTimeout(() => { try { recognition.start(); } catch(e) {} }, 250);
         }
     };
 
     recognition.onresult = (event) => {
-        let letzterIndex = event.results.length - 1;
-        let result = event.results[letzterIndex];
-        if (!result || !result) { return; }
-        
-        let roherText = result.transcript;
-        if (!roherText) { return; }
-        roherText = roherText.toLowerCase().trim();
+        // DAS UNZERSTÖRBARE UR-SCHLEIFENGETRIEBE AUS IHREN ERFOLGREICHEN TESTS!
+        for (let i = verarbeitetesResultat; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (!result || !result[0]) { continue; }
+            let roherText = result[0].transcript;
+            if (!roherText) { continue; }
+            roherText = roherText.toLowerCase().trim();
+            verarbeitetesResultat = i + 1;
 
-        /* =====================================================
-           ✨ SCHARFES TEXT-BÜGEL-SKALPELL GEGEN HÖRFEHLER
-           ===================================================== */
-        let text = roherText
-            .replace(/ein\s+mal/g, "einmal")
-            .replace(/zwei\s+mal/g, "zweimal")
-            .replace(/drei\s+mal/g, "dreimal")
-            .replace(/vier\s+mal/g, "viermal")
-            .replace(/fünf\s+mal/g, "viermal")
-            .replace(/reihem\s+folge/g, "reihenfolge")
-            .replace(/reihen\s+folge/g, "reihenfolge")
-            .replace(/garten/g, "reihenfolge") 
-            .replace(/t1/g, "heute") 
-            .replace(/ranz/g, "franz")
-            .replace(/wolf/g, "12")
-            .replace(/dein\s+datum/g, "dein datum");
+            /* =====================================================
+               ✨ DAS HOCHGRADIG ABGEHÄRTETE BÜHLEN-BÜGEL-SKALPELL
+               ===================================================== */
+            let text = roherText
+                .replace(/ein\s+mal/g, "einmal")
+                .replace(/zwei\s+mal/g, "zweimal")
+                .replace(/drei\s+mal/g, "dreimal")
+                .replace(/vier\s+mal/g, "viermal")
+                .replace(/fünf\s+mal/g, "viermal")
+                .replace(/reihem\s+folge/g, "reihenfolge")
+                .replace(/reihen\s+folge/g, "reihenfolge")
+                .replace(/garten/g, "reihenfolge")       
+                .replace(/kartendeckt/g, "reihenfolge")   
+                .replace(/deckels/g, "reihenfolge")       
+                .replace(/beachte/g, "14")                
+                .replace(/achte/g, "8")                   
+                .replace(/ranz/g, "franz")                
+                .replace(/wolf/g, "12")                   
+                .replace(/dein\s+datum/g, "dein datum");
 
-        logToConsole("<br>📢 [GEHÖRT] „" + roherText + "“");
-        verarbeiteSprache(text);
+            logToConsole("<br>📢 [GEHÖRT] „" + roherText + "“");
+            if (roherText !== text) { logToConsole("✨ [GEBÜGELT] „" + text + "“"); }
+            verarbeiteSprache(text);
+        }
     };
-
     function verarbeiteSprache(text) {
         logToConsole("🔍 [ANALYSE] Prüfe Phase " + phase + "...");
 
         /* =====================================================
-           🔓 PHASE 3: ABSCHLUSS-TRIGGER GANZ OBEN (BÜHNEN-NOT-AUS)
+           🔓 PHASE 3: PRIORITY 1: DER ABSOLUTE BÜHNEN-NOT-AUSSTIEG
            ===================================================== */
         if (phase === 3) {
             if (text.includes("verdeckt") || text.includes("verdeck") || text.includes("fertig") || text.includes("ende") || text.includes("schluss")) {
@@ -183,7 +184,7 @@ if (!SpeechRecognition) {
                 logToConsole("🏆 FINAL-REPORT (IHRE NEUE TABELLEN-LOGIK)");
                 logToConsole("================================================");
                 logToConsole("🃏 KARTENFARBE: " + (kartenFarbe || "❌ (FEHLT!)"));
-                logToConsole("🔢 BERECHNETER WERT: " + kartenWert);
+                logToConsole("🔢 BERECHNETER KARTENWERT: " + kartenWert);
                 logToConsole("👤 NAME: " + (zuschauerName || "❌ (KEIN NAME)"));
                 logToConsole("📅 DATUM: " + (geburtsDatum || "❌ (KEIN DATUM)"));
                 logToConsole("🎂 GEBURTSTAG: " + (istGeburtstag ? "JA! 🎂🎈" : "NEIN"));
@@ -218,7 +219,7 @@ if (!SpeechRecognition) {
         }
 
         /* =====================================================
-           🔓 PHASE 2: IHRE NEUE TABELLEN-LOGIK (ZAHNLEN-AUSSCHLUSS!)
+           🔓 PHASE 2: IHRE TABELLEN-MATRICES (ZAHLEN-AUSSCHLUSS!)
            ===================================================== */
         if (phase === 2) {
             if (text.includes("reihenfolge")) {
@@ -256,7 +257,7 @@ if (!SpeechRecognition) {
         }
 
         /* =====================================================
-           🔓 PHASE 3: NAME + DATUM (ZAHLEN ZULASSUNG NUR HIER!)
+           🔓 PHASE 3: NAME + DATUM (ZAHLEN-ZULASSUNG NUR HIER!)
            ===================================================== */
         if (phase === 3) {
             const datumPosition = text.indexOf("dein datum");
@@ -294,7 +295,7 @@ if (!SpeechRecognition) {
         }
     }
 
-    /* WECHSELSTROM-RESTART WITH ANTI-LOOP */
+    /* GESTERNS REINER, UNZAPPLIGER WECHSELSTROM-RESTART */
     let neustartTimer = null;
     let antiLoopSperre = false;
 
@@ -305,6 +306,7 @@ if (!SpeechRecognition) {
             if (neustartTimer) { clearTimeout(neustartTimer); }
             neustartTimer = setTimeout(() => {
                 try {
+                    // Der Zähler wird für die frische, saubere Sitzung genullt!
                     verarbeitetesResultat = 0; 
                     recognition.start();
                     setTimeout(() => { antiLoopSperre = false; }, 1000);
